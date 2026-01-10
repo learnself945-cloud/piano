@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎹 Vivace 練琴助手 - 星星煙火慶祝版</title>
+    <style>
+        :root { 
+            --bg-paper: #fdf6e3; --piano-black: #2c3e50; --soft-pink: #ffdae0; 
+            --mint: #b8e994; --gold: #d4a373; --wood: #8c5a44; --star-color: #f1c40f;
+        }
+        body { 
+            background: var(--bg-paper); font-family: 'Microsoft JhengHei', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; padding: 20px; 
+            color: var(--piano-black); 
+            overflow-x: hidden; /* 防止煙火溢出造成滾動條 */
+        }
+        .app-card { 
+            width: 100%; max-width: 600px; background: #fffaf0; padding: 30px; 
+            border-radius: 30px; border: 8px solid var(--soft-pink); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            position: relative; /* 為了讓煙火canvas能定位在其上方 */
+            z-index: 10; /* 確保內容在煙火之上 */
+        }
+        
+        /* 統計與獎勵區 */
+        .stats-section { 
+            background: rgba(255, 218, 224, 0.3); padding: 15px; border-radius: 20px; 
+            margin-bottom: 15px; border: 2px dashed var(--gold); 
+        }
+        .stats-grid { 
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; 
+            text-align: center; margin-bottom: 15px; 
+        }
+        .day-box { 
+            font-size: 11px; background: white; padding: 8px 2px; border-radius: 12px; 
+            border: 1px solid var(--soft-pink); 
+        }
+        .day-box.today { background: var(--mint); border: 2px solid var(--wood); }
+        
+        .reward-banner { 
+            background: var(--piano-black); color: white; padding: 12px; border-radius: 15px; 
+            text-align: center; 
+        }
+        .star-display { 
+            font-size: 24px; color: var(--star-color); margin-top: 5px; min-height: 30px; 
+        }
+
+        /* 清單樣式 */
+        .task-list { list-style: none; padding: 0; margin: 0; }
+        .task-item { 
+            display: flex; align-items: center; padding: 12px; background: white; 
+            border-radius: 15px; margin-bottom: 8px; border: 1px solid #eee; gap: 10px; 
+        }
+        .task-text { flex: 1; font-size: 16px; }
+        .completed { background: #f0f0f0; }
+        .completed .task-text { text-decoration: line-through; color: #aaa; }
+
+        /* 工具區 */
+        .timer-section { 
+            text-align: center; background: var(--piano-black); color: #fff; padding: 20px; 
+            border-radius: 20px; margin-bottom: 20px; 
+        }
+        .timer-display { 
+            font-size: 50px; font-weight: bold; font-family: monospace; color: var(--mint); 
+        }
+        .tools-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; 
+        }
+        .tool-box { 
+            border: 2px solid var(--soft-pink); padding: 15px; border-radius: 20px; 
+            background: white; text-align: center; 
+        }
+        
+        button { 
+            cursor: pointer; border: none; border-radius: 12px; padding: 10px 15px; 
+            font-weight: bold; transition: 0.2s; 
+        }
+        button:active { transform: scale(0.95); }
+        .btn-main { background: var(--wood); color: white; }
+        .btn-mint { background: var(--mint); color: var(--wood); }
+        
+        input, select { padding: 5px; border-radius: 5px; border: 1px solid #ccc; }
+        .volume-label { font-size: 11px; display: block; margin-top: 5px; }
+
+        /* 煙火Canvas樣式 */
+        #fireworksCanvas {
+            position: fixed; /* 固定在視窗上層 */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999; /* 確保在最上層 */
+            pointer-events: none; /* 讓煙火不影響下方點擊 */
+            opacity: 0; /* 預設隱藏 */
+            transition: opacity 0.5s ease-out; /* 淡出效果 */
+        }
+        #fireworksCanvas.active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: var(--wood);">📊 本週練琴紀錄</h3>
+        <span style="background:var(--wood); color:white; padding:4px 12px; border-radius:15px; font-size:12px;" id="weekTotalDisplay">總計: 0 分鐘</span>
+    </div>
+    
+    <div class="stats-section">
+        <div class="stats-grid" id="statsGrid"></div>
+        
+        <div class="reward-banner">
+            <div style="font-size: 13px; letter-spacing: 1px;">🏆 練習獎勵 (每 30 分鐘獲得 ⭐)</div>
+            <div id="starContainer" class="star-display"></div>
+            <div id="nextStarInfo" style="font-size: 10px; color: #aaa; margin-top: 3px;"></div>
+        </div>
+    </div>
+
+    <div class="timer-section">
+        <div class="timer-display" id="timeShow">25:00</div>
+        <button class="btn-mint" onclick="toggleTimer()" id="timerBtn" style="margin-top:10px">開始練習</button>
+        <button onclick="resetTimer()" style="background:transparent; color:white; border:1px solid white; font-size:12px;">重設</button>
+    </div>
+
+    <div class="tools-grid">
+        <div class="tool-box">
+            <h4 style="margin:0">🥁 節拍器</h4>
+            <div style="font-size: 11px; margin: 5px 0;">BPM: <input type="number" id="bpmInput" value="100" style="width: 45px;"></div>
+            <select id="soundType" style="font-size:11px; margin-bottom:5px; width: 100%;">
+                <option value="click">打點板 (Click)</option>
+                <option value="sticks">鼓棒 (Sticks)</option>
+                <option value="sharp">電子 (Sharp)</option>
+            </select>
+            <span class="volume-label">🔊 音量調節</span>
+            <input type="range" id="volInput" min="0" max="2" step="0.1" value="1.5" style="width: 100%; margin-bottom: 8px;">
+            <button class="btn-main" onclick="toggleMetronome()" id="metroBtn" style="width:100%;">啟動</button>
+        </div>
+        <div class="tool-box">
+            <h4 style="margin:0 0 5px 0">🔢 計次</h4>
+            <div onclick="changeCount(-1)" style="width:60px; height:60px; border-radius:50%; background:var(--soft-pink); margin:0 auto; display:flex; align-items:center; justify-content:center; cursor:pointer; border:3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <span id="countNum" style="font-size:24px; font-weight:bold">5</span>
+            </div>
+            <button onclick="resetCount()" style="background:none; text-decoration:underline; font-size:12px; margin-top:10px; color: var(--wood); font-weight: bold;">重置次數</button>
+        </div>
+    </div>
+
+    <div style="background: var(--soft-pink); padding: 15px; border-radius: 20px; margin-bottom: 20px;">
+        <h4 style="margin:0 0 10px 0">✨ 新增練習</h4>
+        <div style="display:flex; gap:5px; margin-bottom:8px;">
+            <select id="scaleKey" style="flex:1">
+                <option>C Major</option><option>G Major</option><option>D Major</option><option>A Major</option><option>E Major</option><option>B Major</option><option>F Major</option><option>Bb Major</option><option>Eb Major</option><option>Ab Major</option><option>a minor</option><option>e minor</option><option>d minor</option><option>g minor</option>
+            </select>
+            <input type="number" id="scaleBpmInput" value="120" style="width: 50px;">
+            <button class="btn-main" onclick="addScaleTask()">加入</button>
+        </div>
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="newTaskInput" placeholder="曲目名稱..." style="flex: 1;">
+            <button class="btn-main" onclick="addTask()">新增</button>
+        </div>
+    </div>
+
+    <h3 style="border-left: 5px solid var(--gold); padding-left: 10px;">📝 今日練習清單</h3>
+    <ul class="task-list" id="taskList"></ul>
+
+    <button style="background:#555; color:white; width:100%; margin-top:20px; height:45px; font-size:16px;" onclick="printList()">📄 列印 / 另存 PDF</button>
+</div>
+
+<canvas id="fireworksCanvas"></canvas>
+
+<script>
+    let audioCtx = null, timeLeft = 1500, timerRunning = false, timerInterval = null, metroRunning = false, metroInterval = null, count = 5;
+    let savedTasks = JSON.parse(localStorage.getItem('vivace_reward_tasks')) || [];
+    let weeklyData = JSON.parse(localStorage.getItem('vivace_reward_stats')) || {};
+    let lastStarCount = 0; // 用於追蹤上次獲得的星星數量，避免重複觸發
+
+    // 煙火Canvas相關變數
+    const canvas = document.getElementById('fireworksCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const FIREWORK_SOUND_URL = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARJxAAABAAABeBAAACAEAAIEAAABCaXQAAAABAAAAIAAAAABkYXRhAAAAAA=='; // 簡短慶祝音效，data URL
+    let fireworkAudioBuffer = null;
+
+    // --- 音訊初始化 ---
+    function initAudio() { 
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            loadFireworkSound(); // 預載煙火音效
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume(); 
+    }
+
+    // --- 載入煙火音效 ---
+    function loadFireworkSound() {
+        fetch(FIREWORK_SOUND_URL)
+            .then(response => response.arrayBuffer())
+            .then(buffer => audioCtx.decodeAudioData(buffer))
+            .then(decodedBuffer => {
+                fireworkAudioBuffer = decodedBuffer;
+            })
+            .catch(e => console.error("Error decoding firework sound", e));
+    }
+
+    // --- 播放煙火音效 ---
+    function playFireworkSound() {
+        if (fireworkAudioBuffer && audioCtx) {
+            const source = audioCtx.createBufferSource();
+            source.buffer = fireworkAudioBuffer;
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.5; // 音量適中
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            source.start(0);
+        }
+    }
+
+    // --- 播放節拍器/計次音效 ---
+    function playSound(type) {
+        initAudio(); // 確保 AudioContext 已初始化
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        const volume = document.getElementById('volInput').value;
+
+        if (type === 'click') { 
+            o.type = 'sine'; o.frequency.setValueAtTime(1800, audioCtx.currentTime); 
+            g.gain.setValueAtTime(volume, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); 
+        } else if (type === 'sticks') { 
+            o.type = 'triangle'; o.frequency.setValueAtTime(900, audioCtx.currentTime); 
+            g.gain.setValueAtTime(volume * 1.5, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); 
+        } else { // sharp for count or electronic sound
+            o.type = 'square'; o.frequency.setValueAtTime(1200, audioCtx.currentTime); 
+            g.gain.setValueAtTime(volume * 0.6, audioCtx.currentTime); 
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06); 
+        }
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function getTodayStr() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+    
+    function updateStatsAndStars() {
+        const grid = document.getElementById('statsGrid'); grid.innerHTML = '';
+        const days = ['日', '一', '二', '三', '四', '五', '六'];
+        const now = new Date();
+        let weekTotalSec = 0;
+        
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(); d.setDate(now.getDate() - now.getDay() + i);
+            const dStr = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+            const sec = weeklyData[dStr] || 0; weekTotalSec += sec;
+            const box = document.createElement('div');
+            box.className = `day-box ${dStr === getTodayStr() ? 'today' : ''}`;
+            box.innerHTML = `<div>${days[i]}</div><div style="font-weight:bold">${Math.round(sec/60)}m</div>`;
+            grid.appendChild(box);
+        }
+        
+        const totalMinutes = Math.floor(weekTotalSec / 60);
+        document.getElementById('weekTotalDisplay').innerText = `總計: ${totalMinutes} 分鐘`;
+        
+        const currentStarCount = Math.floor(totalMinutes / 30);
+        const starContainer = document.getElementById('starContainer');
+        const nextStarInfo = document.getElementById('nextStarInfo');
+        
+        starContainer.innerHTML = '⭐'.repeat(currentStarCount);
+        if(currentStarCount === 0 && totalMinutes < 30) {
+            starContainer.innerHTML = '<span style="color:#555; font-size:14px;">尚未獲得星星</span>';
+        }
+        
+        const remain = 30 - (totalMinutes % 30);
+        nextStarInfo.innerText = currentStarCount >= 10 ? "你太強了！鋼琴大師！" : `再練習 ${remain} 分鐘可獲得下一顆星星`;
+
+        // --- 煙火觸發邏輯 ---
+        if (currentStarCount > lastStarCount && lastStarCount !== 0) { // 確保不是第一次載入，且星星數量增加
+            triggerFireworks();
+            playFireworkSound();
+        }
+        lastStarCount = currentStarCount; // 更新上次的星星數量
+    }
+
+    function toggleTimer() {
+        initAudio();
+        if (timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('timerBtn').innerText = "繼續練習"; }
+        else {
+            timerRunning = true; document.getElementById('timerBtn').innerText = "暫停";
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--; updateTimerUI();
+                    const t = getTodayStr(); weeklyData[t] = (weeklyData[t] || 0) + 1;
+                    localStorage.setItem('vivace_reward_stats', JSON.stringify(weeklyData));
+                    if (timeLeft % 10 === 0) updateStatsAndStars();
+                } else { clearInterval(timerInterval); alert("時間到！恭喜完成一段練習！"); resetTimer(); }
+            }, 1000);
+        }
+    }
+
+    function updateTimerUI() { const m = Math.floor(timeLeft/60), s = timeLeft%60; document.getElementById('timeShow').innerText = `${m}:${s.toString().padStart(2,'0')}`; }
+    function resetTimer() { timeLeft = 1500; updateTimerUI(); timerRunning = false; clearInterval(timerInterval); document.getElementById('timerBtn').innerText = "開始練習"; }
+
+    function toggleMetronome() {
+        initAudio();
+        if (metroRunning) { clearTimeout(metroInterval); metroRunning = false; document.getElementById('metroBtn').innerText = "啟動"; }
+        else {
+            metroRunning = true; document.getElementById('metroBtn').innerText = "停止";
+            const trigger = () => { 
+                if(!metroRunning) return; 
+                playSound(document.getElementById('soundType').value); 
+                metroInterval = setTimeout(trigger, 60000/document.getElementById('bpmInput').value); 
+            };
+            trigger();
+        }
+    }
+
+    function changeCount(v) { initAudio(); count = Math.max(0, count + v); document.getElementById('countNum').innerText = count; if(v < 0) playSound('sharp'); }
+    function resetCount() { count = 5; document.getElementById('countNum').innerText = count; }
+
+    function renderTasks() {
+        const list = document.getElementById('taskList'); list.innerHTML = '';
+        savedTasks.forEach((task, index) => {
+            const li = document.createElement('li'); li.className = `task-item ${task.completed ? 'completed' : ''}`;
+            li.innerHTML = `<input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleTask(${index})">
+                <span class="task-text">${task.text}</span>
+                <button onclick="deleteTask(${index})" style="background:none; color:#ccc; font-size:18px;">✕</button>`;
+            list.appendChild(li);
+        });
+        localStorage.setItem('vivace_reward_tasks', JSON.stringify(savedTasks));
+    }
+
+    function addTask() { const v = document.getElementById('newTaskInput').value; if(v) { savedTasks.push({text: v, completed: false}); document.getElementById('newTaskInput').value=''; renderTasks(); } }
+    function addScaleTask() { const k = document.getElementById('scaleKey').value, b = document.getElementById('scaleBpmInput').value; savedTasks.push({text: `🎹 音階: ${k} (${b} BPM)`, completed: false}); renderTasks(); }
+    function toggleTask(index) { savedTasks[index].completed = !savedTasks[index].completed; renderTasks(); }
+    function deleteTask(index) { savedTasks.splice(index, 1); renderTasks(); }
+
+    function printList() {
+        const win = window.open('', '_blank');
+        const date = new Date().toLocaleDateString();
+        const totalMin = Math.floor(Object.values(weeklyData).reduce((a, b) => a + b, 0) / 60);
+        const stars = '⭐'.repeat(Math.floor(totalMin / 30));
+        let items = '';
+        savedTasks.forEach(t => { items += `<div style="padding:15px; border-bottom:1px solid #eee; font-size:20px;">${t.completed ? '☑️' : '☐'} ${t.text}</div>`; });
+        win.document.write(`<html><head><title>練琴紀錄</title></head><body style="font-family:sans-serif; padding:40px;"><h1 style="text-align:center; border-bottom:2px solid #d4a373; padding-bottom:10px;">🎹 每日練琴紀錄清單</h1><p style="text-align:right;">日期：${date}</p><div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px;"><strong>本週成就：</strong> ${stars} (共 ${totalMin} 分鐘)</div>${items}</body></html>`);
+        win.document.close();
+        win.print();
+    }
+
+    // --- 煙火動畫邏輯 ---
+    // 設置 Canvas 尺寸
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // 煙火粒子類
+    class Particle {
+        constructor(x, y, color, velocity) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.velocity = velocity;
+            this.alpha = 1;
+            this.friction = 0.99;
+            this.gravity = 0.05;
+            this.size = Math.random() * 3 + 1;
+        }
+
+        update() {
+            this.velocity.x *= this.friction;
+            this.velocity.y *= this.friction;
+            this.velocity.y += this.gravity;
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+            this.alpha -= 0.005;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // 觸發煙火效果
+    function triggerFireworks() {
+        canvas.classList.add('active'); // 讓Canvas淡入
+        particles = []; // 清空之前的粒子
+
+        // 隨機生成 3-5 個煙火發射點
+        const numFireworks = Math.floor(Math.random() * 3) + 3; 
+        for (let i = 0; i < numFireworks; i++) {
+            const startX = Math.random() * canvas.width;
+            const startY = canvas.height; // 從底部發射
+            const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+
+            // 發射點上升
+            const firework = {
+                x: startX,
+                y: startY,
+                targetY: Math.random() * (canvas.height / 2) + canvas.height / 4, // 目標高度
+                color: color,
+                speed: Math.random() * 5 + 3,
+                reachedTarget: false
+            };
+            particles.push(firework);
+        }
+
+        let animationId;
+        const animate = () => {
+            animationId = requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // 清空畫布
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+
+                if (p.alpha !== undefined) { // 這是爆裂後的粒子
+                    p.update();
+                    p.draw();
+                } else { // 這是上升中的煙火
+                    if (!p.reachedTarget) {
+                        p.y -= p.speed;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2, false);
+                        ctx.fillStyle = p.color;
+                        ctx.fill();
+
+                        if (p.y <= p.targetY) {
+                            p.reachedTarget = true;
+                            // 爆裂成更多粒子
+                            for (let j = 0; j < 100; j++) {
+                                particles.push(new Particle(
+                                    p.x, p.y, p.color,
+                                    { x: (Math.random() - 0.5) * Math.random() * 10, y: (Math.random() - 0.5) * Math.random() * 10 }
+                                ));
+                            }
+                            particles.splice(i, 1); // 移除發射點本身
+                            i--; // 調整索引
+                        }
+                    }
+                }
+            }
+
+            // 過濾掉透明度過低的粒子
+            particles = particles.filter(p => p.alpha === undefined || p.alpha > 0);
+
+            if (particles.length === 0) {
+                cancelAnimationFrame(animationId);
+                canvas.classList.remove('active'); // 煙火結束，淡出Canvas
+            }
+        };
+
+        animate();
+    }
+
+
+    renderTasks(); updateStatsAndStars(); updateTimerUI();
+</script>
+</body>
+</html>
