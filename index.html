@@ -80,7 +80,7 @@
             <button class="btn-main" onclick="toggleMetronome()" id="metroBtn" style="width:100%; margin-top:5px;">啟動</button>
         </div>
         <div class="tool-box">
-            <h4 style="margin:0 0 5px 0">🔢 計次</h4>
+            <h4 style="margin:0 0 5px 0">🔢 計次 (有聲)</h4>
             <div class="counter-btn" onclick="handleCounterClick()" id="countNum">5</div>
             <div style="font-size: 11px; color: var(--wood);">
                 設定次數: <input type="number" id="customCountSet" value="5" min="1" style="width: 35px; text-align: center;" oninput="syncNewStartValue()">
@@ -122,14 +122,14 @@
     let count = 5; 
     const MASTER_PWD = "888";
 
-    let currentSaveName = localStorage.getItem('v_save_v15') || '預設存檔';
-    let saveList = JSON.parse(localStorage.getItem('v_list_v15')) || ['預設存檔'];
+    let currentSaveName = localStorage.getItem('v_save_v16') || '預設存檔';
+    let saveList = JSON.parse(localStorage.getItem('v_list_v16')) || ['預設存檔'];
     let appData = {};
 
     function init() { loadData(); updateSaveSelect(); renderUI(); }
 
     function loadData() {
-        const raw = localStorage.getItem(`v_data_v15_${currentSaveName}`);
+        const raw = localStorage.getItem(`v_data_v16_${currentSaveName}`);
         appData = raw ? JSON.parse(raw) : { tasks: [], stats: {}, threshold: 30, weekStart: new Date().toISOString().split('T')[0] };
         document.getElementById('starThreshold').value = appData.threshold;
         document.getElementById('weekStartDate').value = appData.weekStart;
@@ -142,9 +142,9 @@
     function saveData() {
         appData.threshold = document.getElementById('starThreshold').value;
         appData.weekStart = document.getElementById('weekStartDate').value;
-        localStorage.setItem(`v_data_v15_${currentSaveName}`, JSON.stringify(appData));
-        localStorage.setItem('v_list_v15', JSON.stringify(saveList));
-        localStorage.setItem('v_save_v15', currentSaveName);
+        localStorage.setItem(`v_data_v16_${currentSaveName}`, JSON.stringify(appData));
+        localStorage.setItem('v_list_v16', JSON.stringify(saveList));
+        localStorage.setItem('v_save_v16', currentSaveName);
     }
 
     function renderUI() {
@@ -174,13 +174,34 @@
         });
     }
 
-    // --- 計次功能修正 ---
+    // --- 音效系統 ---
+    function playCounterSound(isEnd = false) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const envelope = audioCtx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(isEnd ? 880 : 1320, audioCtx.currentTime); // 結束音較低，過程音較高
+        
+        envelope.gain.setValueAtTime(0, audioCtx.currentTime);
+        envelope.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.01); // 音量較小
+        envelope.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (isEnd ? 0.3 : 0.1));
+        
+        osc.connect(envelope);
+        envelope.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + (isEnd ? 0.3 : 0.1));
+    }
+
     function handleCounterClick() {
         const setVal = parseInt(document.getElementById('customCountSet').value) || 5;
         if (count > 0) {
             count--;
+            playCounterSound(count === 0); // 到 0 時發出結束提示音
         } else {
-            count = setVal; // 循環回到設定值
+            count = setVal;
+            playCounterSound(false);
         }
         document.getElementById('countNum').innerText = count;
         const btn = document.getElementById('countNum');
@@ -196,6 +217,7 @@
 
     function resetCount() { syncNewStartValue(); }
 
+    // --- 其他邏輯保持不變 ---
     function toggleStarLock() {
         if (isStarLocked) {
             if (prompt("請輸入管理密碼：") === MASTER_PWD) {
@@ -214,7 +236,6 @@
         }
     }
 
-    // --- 節拍器 ---
     function scheduler() {
         while (nextTickTime < audioCtx.currentTime + 0.1) {
             playMetronomeTick(nextTickTime);
@@ -249,7 +270,6 @@
         else { currentBeat = 0; nextTickTime = audioCtx.currentTime; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; }
     }
 
-    // --- 基礎邏輯 ---
     function toggleTask(i) { appData.tasks[i].completed = !appData.tasks[i].completed; saveAndRefresh(); }
     function addTask() { const v = document.getElementById('newTaskInput').value; if(v){ appData.tasks.push({text:v, completed:false}); document.getElementById('newTaskInput').value=''; saveAndRefresh(); } }
     function addScaleTask() { const k=document.getElementById('scaleKey').value, b=document.getElementById('scaleBpmInput').value; appData.tasks.push({text:`🎹 ${k} (${b} BPM)`, completed:false}); saveAndRefresh(); }
