@@ -26,7 +26,7 @@
         .tool-box { border: 2px solid var(--soft-pink); padding: 15px; border-radius: 20px; background: white; text-align: center; }
         .vol-slider { width: 100%; margin: 10px 0; accent-color: var(--wood); }
 
-        .counter-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--soft-pink); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 5px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-size: 32px; font-weight: bold; margin: 10px auto; transition: 0.1s; }
+        .counter-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--soft-pink); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 5px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-size: 32px; font-weight: bold; margin: 10px auto; transition: 0.1s; user-select: none; }
         .counter-btn.flash { background: var(--gold); transform: scale(1.1); color: white; }
         
         .task-list { list-style: none; padding: 0; margin: 0; }
@@ -81,8 +81,11 @@
         </div>
         <div class="tool-box">
             <h4 style="margin:0 0 5px 0">🔢 計次</h4>
-            <div class="counter-btn" onclick="changeCount(-1)" id="countNum">5</div>
-            <button onclick="resetCount()" style="font-size:11px; background:none; border:1px solid #ddd; width:100%;">重置</button>
+            <div class="counter-btn" onclick="handleCounterClick()" id="countNum">5</div>
+            <div style="font-size: 11px; color: var(--wood);">
+                設定次數: <input type="number" id="customCountSet" value="5" min="1" style="width: 35px; text-align: center;" oninput="syncNewStartValue()">
+            </div>
+            <button onclick="resetCount()" style="font-size:10px; background:none; border:1px solid #ddd; width:100%; margin-top:5px;">手動重置</button>
         </div>
     </div>
 
@@ -116,33 +119,32 @@
 
 <script>
     let audioCtx = null, metroRunning = false, nextTickTime = 0, currentBeat = 0, timerID = null, isStarLocked = true;
-    const MASTER_PWD = "888"; // 您的專屬密碼
+    let count = 5; 
+    const MASTER_PWD = "888";
 
-    let currentSaveName = localStorage.getItem('v_save_v13') || '預設存檔';
-    let saveList = JSON.parse(localStorage.getItem('v_list_v13')) || ['預設存檔'];
+    let currentSaveName = localStorage.getItem('v_save_v15') || '預設存檔';
+    let saveList = JSON.parse(localStorage.getItem('v_list_v15')) || ['預設存檔'];
     let appData = {};
 
     function init() { loadData(); updateSaveSelect(); renderUI(); }
 
     function loadData() {
-        const raw = localStorage.getItem(`v_data_v13_${currentSaveName}`);
+        const raw = localStorage.getItem(`v_data_v15_${currentSaveName}`);
         appData = raw ? JSON.parse(raw) : { tasks: [], stats: {}, threshold: 30, weekStart: new Date().toISOString().split('T')[0] };
         document.getElementById('starThreshold').value = appData.threshold;
         document.getElementById('weekStartDate').value = appData.weekStart;
         document.getElementById('displayName').innerText = currentSaveName;
-        // 確保初始狀態為鎖定
         isStarLocked = true;
         document.getElementById('starThreshold').disabled = true;
-        document.getElementById('starThreshold').style.background = "#eee";
         document.getElementById('lockBtn').innerText = "🔑 管理設定";
     }
 
     function saveData() {
         appData.threshold = document.getElementById('starThreshold').value;
         appData.weekStart = document.getElementById('weekStartDate').value;
-        localStorage.setItem(`v_data_v13_${currentSaveName}`, JSON.stringify(appData));
-        localStorage.setItem('v_list_v13', JSON.stringify(saveList));
-        localStorage.setItem('v_save_v13', currentSaveName);
+        localStorage.setItem(`v_data_v15_${currentSaveName}`, JSON.stringify(appData));
+        localStorage.setItem('v_list_v15', JSON.stringify(saveList));
+        localStorage.setItem('v_save_v15', currentSaveName);
     }
 
     function renderUI() {
@@ -160,8 +162,7 @@
             grid.appendChild(box);
         }
         document.getElementById('weekTotalDisplay').innerText = `總計: ${Math.floor(weekTotal/60)} 分`;
-        const totalStars = Math.floor((weekTotal/60)/threshold);
-        document.getElementById('starContainer').innerHTML = totalStars > 0 ? '⭐'.repeat(totalStars) : '加油！';
+        document.getElementById('starContainer').innerHTML = '⭐'.repeat(Math.floor((weekTotal/60)/threshold)) || '加油！';
 
         const list = document.getElementById('taskList'); list.innerHTML = '';
         appData.tasks.forEach((t, i) => {
@@ -172,6 +173,28 @@
             list.appendChild(li);
         });
     }
+
+    // --- 計次功能修正 ---
+    function handleCounterClick() {
+        const setVal = parseInt(document.getElementById('customCountSet').value) || 5;
+        if (count > 0) {
+            count--;
+        } else {
+            count = setVal; // 循環回到設定值
+        }
+        document.getElementById('countNum').innerText = count;
+        const btn = document.getElementById('countNum');
+        btn.style.transform = "scale(0.9)";
+        setTimeout(() => btn.style.transform = "scale(1)", 100);
+    }
+    
+    function syncNewStartValue() {
+        const setVal = parseInt(document.getElementById('customCountSet').value) || 5;
+        count = setVal;
+        document.getElementById('countNum').innerText = count;
+    }
+
+    function resetCount() { syncNewStartValue(); }
 
     function toggleStarLock() {
         if (isStarLocked) {
@@ -191,7 +214,7 @@
         }
     }
 
-    // --- 節拍器系統 ---
+    // --- 節拍器 ---
     function scheduler() {
         while (nextTickTime < audioCtx.currentTime + 0.1) {
             playMetronomeTick(nextTickTime);
@@ -226,9 +249,7 @@
         else { currentBeat = 0; nextTickTime = audioCtx.currentTime; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; }
     }
 
-    // --- 基本邏輯 ---
-    function changeCount(v) { count = Math.max(0, count + v); document.getElementById('countNum').innerText = count; }
-    function resetCount() { count = 5; document.getElementById('countNum').innerText = count; }
+    // --- 基礎邏輯 ---
     function toggleTask(i) { appData.tasks[i].completed = !appData.tasks[i].completed; saveAndRefresh(); }
     function addTask() { const v = document.getElementById('newTaskInput').value; if(v){ appData.tasks.push({text:v, completed:false}); document.getElementById('newTaskInput').value=''; saveAndRefresh(); } }
     function addScaleTask() { const k=document.getElementById('scaleKey').value, b=document.getElementById('scaleBpmInput').value; appData.tasks.push({text:`🎹 ${k} (${b} BPM)`, completed:false}); saveAndRefresh(); }
@@ -238,7 +259,7 @@
     function speak(t) { const m=new SpeechSynthesisUtterance(t); m.lang='zh-TW'; window.speechSynthesis.speak(m); }
     function updateSaveSelect() { const sel=document.getElementById('saveSelect'); sel.innerHTML=''; saveList.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.text=n; if(n===currentSaveName) o.selected=true; sel.add(o); }); }
     function switchSave() { currentSaveName=document.getElementById('saveSelect').value; init(); }
-    function createNewSave() { const n=prompt("輸入新學生或檔案名稱："); if(n && !saveList.includes(n)){ saveList.push(n); currentSaveName=n; appData={tasks:[], stats:{}, threshold:30, weekStart:new Date().toISOString().split('T')[0]}; saveData(); init(); } }
+    function createNewSave() { const n=prompt("輸入新檔案名稱："); if(n && !saveList.includes(n)){ saveList.push(n); currentSaveName=n; appData={tasks:[], stats:{}, threshold:30, weekStart:new Date().toISOString().split('T')[0]}; saveData(); init(); } }
 
     init();
 </script>
