@@ -21,10 +21,15 @@
         .progress-container { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--caramel); width: 100%; transition: width 1s linear; }
 
+        .recorder-section { background: #fff; padding: 15px; border-radius: 20px; border: 2px solid var(--warm-pink); margin-bottom: 20px; text-align: center; }
+        .rec-active { color: #e74c3c; font-weight: bold; animation: blink 1s infinite; margin-bottom: 5px; display: none; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        audio { width: 100%; margin-top: 10px; height: 35px; }
+
         .reward-banner { background: var(--milk-tea); color: var(--warm-wood); padding: 15px; border-radius: 20px; text-align: center; margin-bottom: 15px; border: 1px solid #c8ab8f; }
         .star-display { font-size: 36px; color: var(--gold); margin-bottom: 5px; min-height: 45px; word-break: break-all; }
 
-        .stats-section { background: rgba(255, 218, 224, 0.3); padding: 15px; border-radius: 20px; margin-bottom: 20px; border: 2px dashed var(--caramel); }
+        .stats-section { background: rgba(255, 218, 224, 0.3); padding: 15px; border-radius: 20px; margin-bottom: 15px; border: 2px dashed var(--caramel); }
         .stats-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .day-box { font-size: 11px; background: white; padding: 8px 2px; border-radius: 12px; border: 1px solid var(--warm-pink); }
         .day-box.today { background: var(--caramel); color: white; border: 1px solid var(--warm-wood); }
@@ -48,8 +53,9 @@
         button { cursor: pointer; border: none; border-radius: 12px; font-weight: bold; transition: 0.2s; padding: 8px 12px; }
         .btn-warm { background: var(--caramel); color: white; }
         .btn-soft { background: var(--warm-pink); color: var(--warm-wood); }
-        .btn-pdf { background: #5a8dee; color: white; font-size: 12px; }
+        .btn-pdf { background: #5a8dee; color: white; font-size: 11px; }
         .btn-danger { background: var(--light-coffee); color: white; font-size: 10px; display: none; margin-left: 10px; }
+        .btn-rec { background: #e74c3c; color: white; }
         
         .counter-btn { 
             width: 80px; height: 80px; border-radius: 50%; 
@@ -65,12 +71,18 @@
         input, select { padding: 4px; border-radius: 8px; border: 1px solid #d4a373; outline: none; }
 
         @media print {
-            .file-manager, .timer-section, .tools-grid, .scale-config-area, .sync-area, #weekStartDate, .btn-warm, .btn-soft, .btn-danger, .btn-pdf, .task-item button, .footer-credit, input, select { display: none !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .file-manager, .timer-section, .recorder-section, .tools-grid, .scale-config-area, .sync-area, #weekStartDate, .btn-warm, .btn-soft, .btn-danger, .btn-pdf, .task-item button, .footer-credit, input[type="text"], input[type="number"], select, textarea { display: none !important; }
             body { background: white; padding: 0; }
-            .app-card { border: none; box-shadow: none; width: 100%; max-width: 100%; }
-            .teacher-note-area { border: 1px solid #ccc; background: white; }
+            .app-card { border: none; box-shadow: none; width: 100%; max-width: 100%; padding: 0; }
+            .teacher-note-area { border: 1px solid #ccc; background: white; margin-top: 30px; }
             #noteEditorContainer { display: none !important; }
             #teacherNoteDisplay { display: block !important; }
+            h3 { color: black !important; border-color: black !important; margin-top: 20px !important; }
+            .reward-banner { border: 1px solid #ddd; background: #fff !important; }
+            .star-display { color: #f1c40f !important; font-size: 24px; }
+            .task-item { border-bottom: 1px solid #eee; padding: 10px 0; border-radius: 0; }
+            input[type="checkbox"] { display: inline-block !important; width: 18px; height: 18px; border: 1px solid #888; margin-right: 10px; }
         }
     </style>
 </head>
@@ -115,6 +127,17 @@
         <div class="stats-grid" id="statsGrid"></div>
     </div>
 
+    <div class="recorder-section">
+        <h4 style="margin: 0 0 10px 0; font-size: 15px;">🎙️ 自我檢聽錄音室</h4>
+        <div id="recIndicator" class="rec-active">🔴 Recording...</div>
+        <div style="display: flex; justify-content: center; gap: 8px;">
+            <button id="startRec" class="btn-warm" onclick="startRecording()" style="background: #2ecc71;">⏺ 錄音</button>
+            <button id="stopRec" class="btn-rec" onclick="stopRecording()" disabled>⏹ 停止</button>
+            <button id="downloadRec" class="btn-soft" onclick="downloadAudio()" style="display:none;">💾 下載</button>
+        </div>
+        <audio id="audioPlayback" controls style="display:none;"></audio>
+    </div>
+
     <div class="tools-grid">
         <div class="tool-box">
             <h4 style="margin:0 0 5px 0">🥁 節拍器</h4>
@@ -157,17 +180,15 @@
                 <input type="text" id="pageInput" placeholder="頁數/編號" style="width: 80px;">
                 <button class="btn-warm" onclick="applySmartTemplate()">派發</button>
             </div>
-            <div style="font-size: 11px; color: var(--light-coffee); display: flex; justify-content: space-between;">
-                <span>💡 派發後自動清空。</span>
-                <a href="#" onclick="clearBookHistory()" style="color: #a67c52;">重置教材</a>
-            </div>
         </div>
         <div style="display:flex; gap:5px;">
             <button onclick="exportData()" class="btn-soft" style="flex:1; background: white; border: 1px solid var(--caramel);">📤 分享代碼</button>
             <button onclick="importData()" class="btn-soft" style="flex:1; background: white; border: 1px solid var(--caramel);">📥 匯入功課</button>
+            <button onclick="window.print()" class="btn-pdf" style="flex:1;">🖨️ 輸出 PDF</button>
         </div>
     </div>
 
+    <h3 style="color: var(--warm-wood); border-left: 5px solid var(--caramel); padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">📅 每日練習項目</h3>
     <ul class="task-list" id="taskList"></ul>
 
     <div class="teacher-note-area">
@@ -184,9 +205,6 @@
                 <button onclick="addNewQuickNote()" style="font-size: 10px; background: #8c5a44; color: white; padding: 2px 6px;">➕ 新增評價</button>
             </div>
             <textarea id="teacherNoteEdit" placeholder="在此輸入評價..."></textarea>
-            <div style="font-size: 10px; color: #a67c52; margin-top: 5px; text-align: right;">
-                <a href="#" onclick="clearNoteHistory()" style="color: inherit;">重置評價選單</a>
-            </div>
         </div>
     </div>
 </div>
@@ -194,12 +212,12 @@
 <div class="footer-credit">設計者：陳欣宜 2026</div>
 
 <script>
+    let mediaRecorder, audioChunks = [], audioBlob, audioUrl;
     let audioCtx = null, metroRunning = false, nextTickTime = 0, currentBeat = 0, timerID = null;
     let timerInterval = null, timeLeft = 1200, totalTimeSet = 1200, isTimerRunning = false, isStarLocked = true;
     let count = 5;
     const MASTER_PWD = "888";
     
-    // 預設教材與評價
     const DEFAULT_BOOKS = ["哈農：NO", "芬貝爾", "彈唱曲集", "佈爾格彌勒", "視奏"];
     const DEFAULT_NOTES = [
         { label: "🌟 進步很大", content: "本週進步很大，請繼續保持！" },
@@ -215,12 +233,44 @@
 
     function init() { loadData(); updateSaveSelect(); updateBookDatalist(); updateNoteSelect(); renderUI(); resetTimer(); }
 
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                audioUrl = URL.createObjectURL(audioBlob);
+                const p = document.getElementById('audioPlayback');
+                p.src = audioUrl; p.style.display = 'block';
+                document.getElementById('downloadRec').style.display = 'inline-block';
+            };
+            mediaRecorder.start();
+            document.getElementById('startRec').disabled = true;
+            document.getElementById('stopRec').disabled = false;
+            document.getElementById('recIndicator').style.display = 'block';
+        } catch (err) { alert("無法開啟麥克風。"); }
+    }
+
+    function stopRecording() {
+        mediaRecorder.stop();
+        document.getElementById('startRec').disabled = false;
+        document.getElementById('stopRec').disabled = true;
+        document.getElementById('recIndicator').style.display = 'none';
+    }
+
+    function downloadAudio() {
+        const a = document.createElement('a'); a.href = audioUrl;
+        a.download = `錄音_${currentSaveName}_${new Date().getTime()}.webm`; a.click();
+    }
+
     function loadData() {
         const raw = localStorage.getItem(`v_data_v30_${currentSaveName}`);
         appData = raw ? JSON.parse(raw) : { tasks: [], stats: {}, threshold: 30, weekStart: new Date().toISOString().split('T')[0], baseMinutes: 0, teacherNote: "" };
         document.getElementById('starThreshold').value = appData.threshold || 30;
         document.getElementById('weekStartDate').value = appData.weekStart;
-        document.getElementById('displayName').innerText = currentSaveName;
+        document.getElementById('displayName').innerText = currentSaveName + " - 練琴紀錄";
         document.getElementById('teacherNoteEdit').value = appData.teacherNote || "";
         syncNewStartValue();
     }
@@ -234,7 +284,6 @@
         localStorage.setItem('v_save_v30', currentSaveName);
     }
 
-    // 教材選單邏輯
     function updateBookDatalist() {
         const dl = document.getElementById('bookList'); dl.innerHTML = "";
         let customBooks = JSON.parse(localStorage.getItem('v_custom_books_v30')) || [];
@@ -256,17 +305,13 @@
         saveAndRefresh(); updateBookDatalist();
     }
 
-    // 評語選單邏輯：核心優化點
     function updateNoteSelect() {
         const sel = document.getElementById('quickNotes');
         sel.innerHTML = '<option value="">-- 請選擇 --</option>';
         let customNotes = JSON.parse(localStorage.getItem('v_custom_notes_v30')) || [];
         let allNotes = [...DEFAULT_NOTES, ...customNotes];
         allNotes.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item.content;
-            opt.text = item.label; // 這裡只會顯示 4 個字
-            sel.appendChild(opt);
+            const opt = document.createElement('option'); opt.value = item.content; opt.text = item.label; sel.appendChild(opt);
         });
     }
 
@@ -288,23 +333,10 @@
                 customNotes.push({ label: label, content: content });
                 localStorage.setItem('v_custom_notes_v30', JSON.stringify(customNotes));
                 updateNoteSelect();
-                alert("已加入選單！");
             }
         }
     }
 
-    function clearNoteHistory() {
-        if(confirm("確定要重置評價選單嗎？")) {
-            localStorage.removeItem('v_custom_notes_v30');
-            updateNoteSelect();
-        }
-    }
-
-    function clearBookHistory() {
-        if(confirm("確定要重置教材清單嗎？")) { localStorage.removeItem('v_custom_books_v30'); updateBookDatalist(); }
-    }
-
-    // 以下為其餘功能（完整保留，確保計時、節拍器等正常工作）
     function renderUI() {
         const grid = document.getElementById('statsGrid'); grid.innerHTML = '';
         const todayStr = new Date().toISOString().split('T')[0];
@@ -331,7 +363,6 @@
         document.getElementById('teacherNoteDisplay').innerText = appData.teacherNote || "";
     }
 
-    // 輔助工具
     function handleCounterClick() {
         const startVal = parseInt(document.getElementById('customCountSet').value) || 5;
         if (count > 1) { count--; playBeep(1000, 0.1); document.getElementById('countNum').innerText = count; }
