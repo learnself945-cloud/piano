@@ -6,270 +6,364 @@
     <title>🎹 Vivace 練琴助手 - 陳欣宜 2026</title>
     <style>
         :root { 
-            --bg-paper: #fdf6e3; --piano-black: #2c3e50; --soft-pink: #ffdae0; 
-            --mint: #b8e994; --gold: #d4a373; --wood: #8c5a44; --star-color: #f1c40f;
+            --bg-paper: #fff9f0; --warm-wood: #8c5a44; --cream: #fdf6e3; 
+            --warm-pink: #ffdae0; --caramel: #d4a373; --gold: #f1c40f; --alert: #e67e22;
+            --milk-tea: #ddc1a7; --light-coffee: #a67c52;
         }
-        body { background: var(--bg-paper); font-family: 'Microsoft JhengHei', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; color: var(--piano-black); }
-        .app-card { width: 100%; max-width: 600px; background: #fffaf0; padding: 25px; border-radius: 30px; border: 8px solid var(--soft-pink); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        body { background: var(--bg-paper); font-family: 'Microsoft JhengHei', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; color: var(--warm-wood); }
+        .app-card { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 30px; border: 8px solid var(--warm-pink); box-shadow: 0 10px 30px rgba(140,90,68,0.1); position: relative; }
         
-        .file-manager { display: flex; gap: 8px; margin-bottom: 15px; background: var(--wood); padding: 10px 20px; border-radius: 50px; color: white; align-items: center; justify-content: center; }
-        .file-manager select { background: white; border-radius: 5px; padding: 3px; border: none; }
+        .file-manager { display: flex; gap: 8px; margin-bottom: 15px; background: var(--caramel); padding: 10px 20px; border-radius: 50px; color: white; align-items: center; justify-content: center; }
+        .file-manager select { background: white; border-radius: 5px; padding: 3px; border: none; color: var(--warm-wood); }
 
-        .stats-section { background: rgba(255, 218, 224, 0.3); padding: 15px; border-radius: 20px; margin-bottom: 15px; border: 2px dashed var(--gold); }
-        .stats-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-bottom: 10px; }
-        .day-box { font-size: 11px; background: white; padding: 8px 2px; border-radius: 12px; border: 1px solid var(--soft-pink); }
-        .day-box.today { background: var(--mint); border: 2px solid var(--wood); }
-        .reward-banner { background: var(--piano-black); color: white; padding: 12px; border-radius: 15px; text-align: center; }
-        .star-display { font-size: 24px; color: var(--star-color); margin-top: 5px; min-height: 30px; }
+        .timer-section { background: var(--cream); padding: 25px; border-radius: 25px; margin-bottom: 15px; text-align: center; border: 3px solid var(--caramel); }
+        .timer-display { font-size: 64px; font-family: 'Verdana', sans-serif; font-weight: bold; color: var(--warm-wood); margin: 5px 0; }
+        .progress-container { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--caramel); width: 100%; transition: width 1s linear; }
 
+        .reward-banner { background: var(--milk-tea); color: var(--warm-wood); padding: 15px; border-radius: 20px; text-align: center; margin-bottom: 15px; border: 1px solid #c8ab8f; }
+        .star-display { font-size: 36px; color: var(--gold); margin-bottom: 5px; min-height: 45px; word-break: break-all; }
+
+        .stats-section { background: rgba(255, 218, 224, 0.3); padding: 15px; border-radius: 20px; margin-bottom: 20px; border: 2px dashed var(--caramel); }
+        .stats-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .day-box { font-size: 11px; background: white; padding: 8px 2px; border-radius: 12px; border: 1px solid var(--warm-pink); }
+        .day-box.today { background: var(--caramel); color: white; border: 1px solid var(--warm-wood); }
+
+        .scale-config-area { background: var(--warm-pink); padding: 15px; border-radius: 20px; margin-bottom: 20px; }
         .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .tool-box { border: 2px solid var(--soft-pink); padding: 15px; border-radius: 20px; background: white; text-align: center; }
-        .vol-slider { width: 100%; margin: 10px 0; accent-color: var(--wood); }
-
-        .counter-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--soft-pink); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 5px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-size: 32px; font-weight: bold; margin: 10px auto; transition: 0.1s; user-select: none; }
-        .counter-btn.flash { background: var(--gold); transform: scale(1.1); color: white; }
+        .tool-box { border: 2px solid var(--warm-pink); padding: 15px; border-radius: 20px; background: white; text-align: center; }
         
         .task-list { list-style: none; padding: 0; margin: 0; }
-        .task-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 12px; margin-bottom: 8px; border: 1px solid #eee; gap: 10px; }
-        .task-text { flex: 1; font-size: 15px; user-select: none; }
-        .completed { background: #f0f0f0; opacity: 0.6; }
+        .task-item { display: flex; align-items: center; padding: 12px; background: white; border-radius: 12px; margin-bottom: 8px; border: 1px solid #f0e6d2; gap: 10px; }
+        .task-text { flex: 1; font-size: 15px; color: var(--warm-wood); cursor: pointer; }
 
-        button { cursor: pointer; border: none; border-radius: 10px; font-weight: bold; padding: 8px 12px; transition: 0.2s; }
-        .btn-main { background: var(--wood); color: white; }
-        .footer-credit { margin-top: 25px; font-size: 14px; color: var(--wood); opacity: 0.8; font-weight: bold; }
-        input, select { padding: 4px; border-radius: 5px; border: 1px solid #ccc; font-size: 12px; }
+        .teacher-note-area { margin-top: 20px; padding: 15px; background: #fffcf5; border: 2px solid var(--warm-pink); border-radius: 15px; }
+        .teacher-note-area h4 { margin: 0 0 10px 0; color: var(--warm-wood); font-size: 16px; border-left: 5px solid var(--caramel); padding-left: 10px; }
+        #teacherNoteDisplay { min-height: 50px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #555; }
+        #noteEditorContainer { display: none; flex-direction: column; gap: 10px; }
+        #teacherNoteEdit { width: 100%; min-height: 80px; border: 1px solid var(--caramel); border-radius: 8px; padding: 8px; font-family: inherit; font-size: 14px; box-sizing: border-box; }
+
+        button { cursor: pointer; border: none; border-radius: 12px; font-weight: bold; transition: 0.2s; padding: 8px 12px; }
+        .btn-warm { background: var(--caramel); color: white; }
+        .btn-soft { background: var(--warm-pink); color: var(--warm-wood); }
+        .btn-pdf { background: #5a8dee; color: white; font-size: 12px; }
+        .btn-danger { background: var(--light-coffee); color: white; font-size: 10px; display: none; margin-left: 10px; }
+        
+        .counter-btn { 
+            width: 80px; height: 80px; border-radius: 50%; 
+            background: var(--warm-pink); display: flex; align-items: center; 
+            justify-content: center; cursor: pointer; border: 4px solid white; 
+            font-size: 32px; font-weight: bold; margin: 10px auto; 
+            color: var(--warm-wood); transition: transform 0.1s;
+            user-select: none; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .counter-btn:active { transform: scale(0.9); }
+
+        .footer-credit { margin-top: 25px; font-size: 14px; color: var(--caramel); font-weight: bold; }
+        input, select { padding: 4px; border-radius: 8px; border: 1px solid #d4a373; outline: none; }
+
+        @media print {
+            .file-manager, .timer-section, .tools-grid, .scale-config-area, #weekStartDate, .btn-warm, .btn-soft, .btn-danger, .btn-pdf, .task-item button, .footer-credit, input, select { display: none !important; }
+            body { background: white; padding: 0; }
+            .app-card { border: none; box-shadow: none; width: 100%; max-width: 100%; }
+            .teacher-note-area { border: 1px solid #ccc; background: white; }
+            #noteEditorContainer { display: none !important; }
+            #teacherNoteDisplay { display: block !important; }
+            input[type="checkbox"] { -webkit-appearance: none; appearance: none; border: 1px solid #ccc; width: 15px; height: 15px; border-radius: 3px; }
+        }
     </style>
 </head>
 <body>
 
 <div class="file-manager">
-    <span>📁 存檔：</span>
+    <span>📁 學生：</span>
     <select id="saveSelect" onchange="switchSave()"></select>
-    <button onclick="createNewSave()" style="background:#444; color:white; font-size:11px;">➕ 新增</button>
+    <button onclick="createNewSave()" style="background:#555; color:white; font-size:11px;">➕ 新增</button>
 </div>
 
 <div class="app-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3 style="margin: 0; color: var(--wood);" id="displayName">📊 練琴紀錄</h3>
-        <span style="background:var(--wood); color:white; padding:4px 12px; border-radius:15px; font-size:12px;" id="weekTotalDisplay">總計: 0 分</span>
+        <h3 style="margin: 0; color: var(--warm-wood);" id="displayName">📊 練琴紀錄</h3>
+        <span style="background:var(--caramel); color:white; padding:4px 12px; border-radius:15px; font-size:12px;" id="weekTotalDisplay">總計: 0 分</span>
+    </div>
+
+    <div class="timer-section">
+        <div style="font-size: 13px; color: var(--caramel); margin-bottom: 5px;" id="currentTaskTitle">請點選下方練習項目</div>
+        <div class="timer-display" id="mainClock">20:00</div>
+        <div class="progress-container"><div class="progress-bar" id="timerBar"></div></div>
+        <div style="display: flex; justify-content: center; gap: 8px; align-items: center;">
+            <input type="number" id="setMinutes" value="20" min="1" style="width: 40px; text-align: center;"> 分
+            <button class="btn-warm" id="timerBtn" onclick="toggleTimer()">▶ 開始</button>
+            <button class="btn-soft" onclick="resetTimer()">🔄 重置</button>
+        </div>
+    </div>
+
+    <div class="reward-banner">
+        <div id="starContainer" class="star-display"></div>
+        <div style="font-size: 11px; opacity: 0.9;">
+            ⭐ 每 <input type="number" id="starThreshold" value="30" min="1" disabled style="width: 30px; border:none; background:transparent; color:inherit; text-align:center; font-weight:bold;"> 分鐘得一星
+            <button onclick="toggleStarLock()" id="lockBtn" style="padding: 2px 6px; font-size: 9px; background: #744b35; color: white;">🔑 管理</button>
+            <button onclick="resetStars()" id="resetStarBtn" class="btn-danger">🗑️ 星星歸零</button>
+        </div>
     </div>
     
     <div class="stats-section">
-        <div style="text-align: center; font-size: 12px; margin-bottom: 10px;">
-            週起始日：<input type="date" id="weekStartDate" onchange="saveAndRefresh()">
+        <div style="text-align: center; font-size: 11px; margin-bottom: 10px; color: var(--caramel);">
+            📅 每週起始日：<input type="date" id="weekStartDate" onchange="saveAndRefresh()">
         </div>
         <div class="stats-grid" id="statsGrid"></div>
-        <div class="reward-banner">
-            <div id="starContainer" class="star-display"></div>
-            <div class="star-config" style="font-size:11px; margin-top:5px;">
-                ⭐ 每 <input type="number" id="starThreshold" value="30" min="1" disabled style="width: 45px; text-align: center; background: #eee;"> 分/1星
-                <button onclick="toggleStarLock()" id="lockBtn" style="padding: 2px 8px; font-size: 10px; background: #555; color: white;">🔑 管理設定</button>
-            </div>
-        </div>
     </div>
 
     <div class="tools-grid">
         <div class="tool-box">
             <h4 style="margin:0 0 5px 0">🥁 節拍器</h4>
-            BPM: <input type="number" id="bpmInput" value="100" style="width:45px;"><br>
-            <select id="beatType" style="width:100%; margin-top:5px;" onchange="currentBeat=0">
-                <option value="0">無重音</option><option value="2">2 拍子</option><option value="3">3 拍子</option><option value="4">4 拍子</option><option value="6">6 拍子</option>
-            </select>
-            <div style="font-size:11px; margin-top:8px; color:var(--wood);">🔊 音量</div>
-            <input type="range" id="volSlider" class="vol-slider" min="0" max="1" step="0.1" value="0.5">
-            <button class="btn-main" onclick="toggleMetronome()" id="metroBtn" style="width:100%; margin-top:5px;">啟動</button>
+            <div style="font-size: 11px; margin-bottom: 5px;">
+                BPM: <input type="number" id="bpmInput" value="100" style="width:40px;">
+                <select id="beatType" onchange="currentBeat=0" style="width:55px;"><option value="0">無</option><option value="2">2/4</option><option value="3">3/4</option><option value="4">4/4</option><option value="6">6/8</option></select>
+            </div>
+            <input type="range" id="volSlider" style="width:100%; accent-color:var(--caramel);" min="0" max="1" step="0.1" value="0.7">
+            <button class="btn-warm" onclick="toggleMetronome()" id="metroBtn" style="width:100%; margin-top:5px;">啟動</button>
         </div>
         <div class="tool-box">
             <h4 style="margin:0 0 5px 0">🔢 計次</h4>
             <div class="counter-btn" onclick="handleCounterClick()" id="countNum">5</div>
-            <div style="font-size: 11px; color: var(--wood);">
-                設定次數: <input type="number" id="customCountSet" value="5" min="1" style="width: 35px; text-align: center;" oninput="syncNewStartValue()">
-            </div>
-            <button onclick="resetCount()" style="font-size:10px; background:none; border:1px solid #ddd; width:100%; margin-top:5px;">手動重置</button>
+            <input type="number" id="customCountSet" value="5" min="1" style="width: 35px; text-align: center;" oninput="syncNewStartValue()"> 次
         </div>
     </div>
 
-    <div style="background: var(--soft-pink); padding: 15px; border-radius: 20px; margin-bottom: 20px;">
-        <h4 style="margin:0 0 10px 0">✨ 音階大小調內容</h4>
+    <div class="scale-config-area">
+        <h4 style="margin:0 0 10px 0">✨ 音階 24 大小調</h4>
         <div style="display:flex; gap:5px; margin-bottom:8px;">
             <select id="scaleKey" style="flex:1">
-                <optgroup label="--- 大調 Major ---">
-                    <option>C Major</option><option>G Major</option><option>D Major</option><option>A Major</option>
-                    <option>E Major</option><option>B Major</option><option>F# Major</option><option>Gb Major</option>
-                    <option>Db Major</option><option>Ab Major</option><option>Eb Major</option><option>Bb Major</option><option>F Major</option>
-                </optgroup>
-                <optgroup label="--- 小調 Minor ---">
-                    <option>a minor</option><option>e minor</option><option>b minor</option><option>f# minor</option>
-                    <option>c# minor</option><option>g# minor</option><option>eb minor</option><option>bb minor</option>
-                    <option>f minor</option><option>c minor</option><option>g minor</option><option>d minor</option>
-                </optgroup>
+                <optgroup label="大調 Major"><option>C Major</option><option>G Major</option><option>D Major</option><option>A Major</option><option>E Major</option><option>B Major</option><option>F# Major</option><option>C# Major</option><option>F Major</option><option>Bb Major</option><option>Eb Major</option><option>Ab Major</option><option>Db Major</option><option>Gb Major</option><option>Cb Major</option></optgroup>
+                <optgroup label="小調 minor"><option>a minor</option><option>e minor</option><option>b minor</option><option>f# minor</option><option>c# minor</option><option>g# minor</option><option>d# minor</option><option>a# minor</option><option>d minor</option><option>g minor</option><option>c minor</option><option>f minor</option><option>bb minor</option><option>eb minor</option><option>ab minor</option></optgroup>
             </select>
-            <input type="number" id="scaleBpmInput" value="120" style="width: 50px;">
-            <button class="btn-main" onclick="addScaleTask()">加入</button>
+            速度: <input type="number" id="scaleBpm" value="60" style="width: 40px;">
+            <button class="btn-warm" onclick="addScaleTask()">加入</button>
         </div>
         <div style="display: flex; gap: 5px;">
             <input type="text" id="newTaskInput" placeholder="自訂練習內容..." style="flex: 1;">
-            <button class="btn-main" onclick="addTask()">新增</button>
+            <button class="btn-warm" onclick="addTask()">新增</button>
         </div>
     </div>
 
-    <div style="margin-bottom: 10px; border-bottom: 2px solid var(--soft-pink); padding-bottom: 5px;">
-        <h4 style="margin:0; color: var(--wood);">📅 每日練習項目</h4>
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--warm-pink); padding-bottom: 5px; margin-bottom: 10px;">
+        <h4 style="margin: 0; color: var(--warm-wood);">📅 每日練習項目 (點擊編輯)</h4>
+        <button class="btn-pdf" onclick="window.print()">📤 輸出 PDF</button>
     </div>
     <ul class="task-list" id="taskList"></ul>
+
+    <div class="teacher-note-area">
+        <h4>📝 本週評價及注意事項</h4>
+        <div id="teacherNoteDisplay"></div>
+        <div id="noteEditorContainer">
+            <div style="font-size: 11px; color: var(--caramel);">
+                快速評語：
+                <select id="quickNotes" onchange="addQuickNote()" style="font-size: 11px;">
+                    <option value="">-- 請選擇 --</option>
+                    <option value="本週進步很大，請繼續保持！">🌟 進步很大</option>
+                    <option value="練習穩定度高，表現優異。">👏 表現優異</option>
+                    <option value="節奏感稍微不穩，建議多跟節拍器練習。">🥁 節奏加強</option>
+                    <option value="手型要注意，避免手指塌陷。">🖐️ 注意手型</option>
+                    <option value="樂句處理可以再更細緻一點。">🎼 樂句處理</option>
+                    <option value="視譜速度提升中，加油！">🔍 視譜進步</option>
+                    <option value="本週練習量不足，下週請補回來喔。">⏰ 練習不足</option>
+                </select>
+            </div>
+            <textarea id="teacherNoteEdit" placeholder="在此輸入評價..."></textarea>
+        </div>
+    </div>
 </div>
 
 <div class="footer-credit">設計者：陳欣宜 2026</div>
 
 <script>
-    let audioCtx = null, metroRunning = false, nextTickTime = 0, currentBeat = 0, timerID = null, isStarLocked = true;
-    let count = 5; 
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJT4nW5D7-HpqxYShJpOf_DRdh6qv9qb61wYx8ToaVma4qwhcP_zECJ9AGzhDXePPmyQ/exec";
+    let audioCtx = null, metroRunning = false, nextTickTime = 0, currentBeat = 0, timerID = null;
+    let timerInterval = null, timeLeft = 1200, totalTimeSet = 1200, isTimerRunning = false, isStarLocked = true;
+    let count = 5;
     const MASTER_PWD = "888";
 
-    let currentSaveName = localStorage.getItem('v_save_v17') || '預設存檔';
-    let saveList = JSON.parse(localStorage.getItem('v_list_v17')) || ['預設存檔'];
+    let currentSaveName = localStorage.getItem('v_save_v29') || '預設存檔';
+    let saveList = JSON.parse(localStorage.getItem('v_list_v29')) || ['預設存檔'];
     let appData = {};
 
-    function init() { loadData(); updateSaveSelect(); renderUI(); }
+    function init() { loadData(); updateSaveSelect(); renderUI(); resetTimer(); }
 
     function loadData() {
-        const raw = localStorage.getItem(`v_data_v17_${currentSaveName}`);
-        appData = raw ? JSON.parse(raw) : { tasks: [], stats: {}, threshold: 30, weekStart: new Date().toISOString().split('T')[0] };
-        document.getElementById('starThreshold').value = appData.threshold;
+        const raw = localStorage.getItem(`v_data_v29_${currentSaveName}`);
+        appData = raw ? JSON.parse(raw) : { tasks: [], stats: {}, threshold: 30, weekStart: new Date().toISOString().split('T')[0], baseMinutes: 0, teacherNote: "" };
+        if (appData.teacherNote === undefined) appData.teacherNote = "";
+        document.getElementById('starThreshold').value = appData.threshold || 30;
         document.getElementById('weekStartDate').value = appData.weekStart;
         document.getElementById('displayName').innerText = currentSaveName;
-        isStarLocked = true;
-        document.getElementById('starThreshold').disabled = true;
-        document.getElementById('lockBtn').innerText = "🔑 管理設定";
+        document.getElementById('teacherNoteEdit').value = appData.teacherNote;
+        count = parseInt(document.getElementById('customCountSet').value) || 5;
+        document.getElementById('countNum').innerText = count;
     }
 
     function saveData() {
         appData.threshold = document.getElementById('starThreshold').value;
         appData.weekStart = document.getElementById('weekStartDate').value;
-        localStorage.setItem(`v_data_v17_${currentSaveName}`, JSON.stringify(appData));
-        localStorage.setItem('v_list_v17', JSON.stringify(saveList));
-        localStorage.setItem('v_save_v17', currentSaveName);
+        appData.teacherNote = document.getElementById('teacherNoteEdit').value;
+        localStorage.setItem(`v_data_v29_${currentSaveName}`, JSON.stringify(appData));
+        localStorage.setItem('v_list_v29', JSON.stringify(saveList));
+        localStorage.setItem('v_save_v29', currentSaveName);
+    }
+
+    function syncToCloud(minutesSpent) {
+        const totalMins = Math.floor(Object.values(appData.stats).reduce((a, b) => a + b, 0) / 60);
+        const displayMins = Math.max(0, totalMins - (appData.baseMinutes || 0));
+        const stars = Math.floor(displayMins / (parseInt(appData.threshold) || 30));
+
+        const payload = {
+            studentName: currentSaveName,
+            date: new Date().toLocaleString('zh-TW'),
+            minutes: Math.round(minutesSpent / 60),
+            stars: stars,
+            note: appData.teacherNote
+        };
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify(payload)
+        }).then(() => console.log("Cloud sync successful"));
     }
 
     function renderUI() {
         const grid = document.getElementById('statsGrid'); grid.innerHTML = '';
+        const todayStr = new Date().toISOString().split('T')[0];
         const start = new Date(appData.weekStart);
-        const threshold = parseInt(appData.threshold) || 30;
         let weekTotal = 0;
         for (let i = 0; i < 7; i++) {
             const curr = new Date(start); curr.setDate(start.getDate() + i);
             const dStr = curr.toISOString().split('T')[0];
             const sec = appData.stats[dStr] || 0; weekTotal += sec;
             const box = document.createElement('div');
-            box.className = `day-box ${dStr === new Date().toISOString().split('T')[0] ? 'today' : ''}`;
+            box.className = `day-box ${dStr === todayStr ? 'today' : ''}`;
             box.innerHTML = `<div>${['日','一','二','三','四','五','六'][curr.getDay()]}</div><b>${Math.round(sec/60)}m</b>`;
             grid.appendChild(box);
         }
-        document.getElementById('weekTotalDisplay').innerText = `總計: ${Math.floor(weekTotal/60)} 分`;
-        document.getElementById('starContainer').innerHTML = '⭐'.repeat(Math.floor((weekTotal/60)/threshold)) || '加油！';
+        const totalMins = Math.floor(weekTotal/60);
+        const displayMins = Math.max(0, totalMins - (appData.baseMinutes || 0));
+        document.getElementById('weekTotalDisplay').innerText = `總計: ${totalMins} 分`;
+        const stars = Math.floor(displayMins / (parseInt(appData.threshold) || 30));
+        document.getElementById('starContainer').innerHTML = '⭐'.repeat(stars) || '✨';
 
         const list = document.getElementById('taskList'); list.innerHTML = '';
         appData.tasks.forEach((t, i) => {
-            const li = document.createElement('li'); li.className = `task-item ${t.completed ? 'completed' : ''}`;
-            li.innerHTML = `<input type="checkbox" ${t.completed ? 'checked' : ''} onclick="toggleTask(${i})">
-                <span class="task-text" ondblclick="editTask(${i})">${t.text}</span>
-                <button onclick="deleteTask(${i})" style="color:#ccc; background:none;">✕</button>`;
+            const li = document.createElement('li'); li.className = `task-item`;
+            li.innerHTML = `<input type="checkbox">
+                            <span class="task-text" onclick="handleTaskEdit(${i})">${t.text}</span>
+                            <button onclick="deleteTask(${i})" style="color:#ccc; background:none; font-size:10px;">✕</button>`;
             list.appendChild(li);
         });
-    }
-
-    // --- 音效系統 (計次器) ---
-    function playCounterSound(isEnd = false) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const envelope = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(isEnd ? 880 : 1320, audioCtx.currentTime); 
-        envelope.gain.setValueAtTime(0, audioCtx.currentTime);
-        envelope.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.01);
-        envelope.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (isEnd ? 0.3 : 0.1));
-        osc.connect(envelope); envelope.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + (isEnd ? 0.3 : 0.1));
+        document.getElementById('teacherNoteDisplay').innerText = appData.teacherNote || "";
     }
 
     function handleCounterClick() {
-        const setVal = parseInt(document.getElementById('customCountSet').value) || 5;
-        if (count > 0) {
-            count--;
-            playCounterSound(count === 0);
-        } else {
-            count = setVal;
-            playCounterSound(false);
+        const startVal = parseInt(document.getElementById('customCountSet').value) || 5;
+        if (count > 1) { count--; playBeep(1000, 0.1); document.getElementById('countNum').innerText = count; } 
+        else { count = 0; document.getElementById('countNum').innerText = 0; playBeep(1600, 0.4); 
+            setTimeout(() => { count = startVal; document.getElementById('countNum').innerText = count; }, 500);
         }
-        document.getElementById('countNum').innerText = count;
-        const btn = document.getElementById('countNum');
-        btn.style.transform = "scale(0.9)";
-        setTimeout(() => btn.style.transform = "scale(1)", 100);
-    }
-    
-    function syncNewStartValue() {
-        const setVal = parseInt(document.getElementById('customCountSet').value) || 5;
-        count = setVal;
-        document.getElementById('countNum').innerText = count;
     }
 
-    function resetCount() { syncNewStartValue(); }
-
-    // --- 節拍器系統 ---
-    function scheduler() {
-        while (nextTickTime < audioCtx.currentTime + 0.1) {
-            playMetronomeTick(nextTickTime);
-            const bpm = document.getElementById('bpmInput').value || 100;
-            const bType = parseInt(document.getElementById('beatType').value);
-            nextTickTime += 60.0 / bpm;
-            if (bType > 0) currentBeat = (currentBeat + 1) % bType;
-        }
-        timerID = window.requestAnimationFrame(scheduler);
-    }
-    function playMetronomeTick(time) {
-        const osc = audioCtx.createOscillator();
-        const envelope = audioCtx.createGain();
-        const isAccent = (currentBeat === 0 && document.getElementById('beatType').value > 0);
-        const volume = document.getElementById('volSlider').value;
-        osc.frequency.value = isAccent ? 1200 : 800;
-        envelope.gain.setValueAtTime(isAccent ? volume * 0.8 : volume * 0.3, time);
-        envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-        osc.connect(envelope); envelope.connect(audioCtx.destination);
-        osc.start(time); osc.stop(time + 0.05);
-    }
-    function toggleMetronome() {
+    function playBeep(f, d) {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (metroRunning) { window.cancelAnimationFrame(timerID); metroRunning = false; document.getElementById('metroBtn').innerText = "啟動"; }
-        else { currentBeat = 0; nextTickTime = audioCtx.currentTime; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; }
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
     }
 
-    // --- 基礎邏輯 ---
-    function toggleTask(i) { appData.tasks[i].completed = !appData.tasks[i].completed; saveAndRefresh(); }
-    function addTask() { const v = document.getElementById('newTaskInput').value; if(v){ appData.tasks.push({text:v, completed:false}); document.getElementById('newTaskInput').value=''; saveAndRefresh(); } }
-    function addScaleTask() { const k=document.getElementById('scaleKey').value, b=document.getElementById('scaleBpmInput').value; appData.tasks.push({text:`🎹 ${k} (${b} BPM)`, completed:false}); saveAndRefresh(); }
-    function editTask(i) { const nt = prompt("修改練習項目：", appData.tasks[i].text); if(nt){ appData.tasks[i].text=nt; saveAndRefresh(); } }
-    function deleteTask(i) { if(confirm("確定刪除此項目？")){ appData.tasks.splice(i,1); saveAndRefresh(); } }
-    function saveAndRefresh() { saveData(); renderUI(); }
     function toggleStarLock() {
         if (isStarLocked) {
             if (prompt("請輸入管理密碼：") === MASTER_PWD) {
                 isStarLocked = false;
                 document.getElementById('starThreshold').disabled = false;
-                document.getElementById('starThreshold').style.background = "white";
-                document.getElementById('lockBtn').innerText = "✅ 儲存鎖定";
+                document.getElementById('lockBtn').innerText = "✅ 儲存並同步";
+                document.getElementById('resetStarBtn').style.display = "inline-block";
+                document.getElementById('teacherNoteDisplay').style.display = "none";
+                document.getElementById('noteEditorContainer').style.display = "flex";
             }
         } else {
             isStarLocked = true;
             document.getElementById('starThreshold').disabled = true;
-            document.getElementById('starThreshold').style.background = "#eee";
-            document.getElementById('lockBtn').innerText = "🔑 管理設定";
-            saveData();
-            renderUI();
+            document.getElementById('lockBtn').innerText = "🔑 管理";
+            document.getElementById('resetStarBtn').style.display = "none";
+            document.getElementById('teacherNoteDisplay').style.display = "block";
+            document.getElementById('noteEditorContainer').style.display = "none";
+            saveAndRefresh();
+            syncToCloud(0); // 老師存檔時同步最新狀態(分鐘數傳0代表僅同步狀態)
         }
     }
-    function updateSaveSelect() { const sel=document.getElementById('saveSelect'); sel.innerHTML=''; saveList.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.text=n; if(n===currentSaveName) o.selected=true; sel.add(o); }); }
+
+    function saveTimeProgress() {
+        const today = new Date().toISOString().split('T')[0];
+        appData.stats[today] = (appData.stats[today] || 0) + totalTimeSet;
+        syncToCloud(totalTimeSet);
+        saveAndRefresh();
+    }
+
+    function toggleTimer() {
+        if (!isTimerRunning) {
+            isTimerRunning = true; document.getElementById('timerBtn').innerText = "⏸ 暫停";
+            timerInterval = setInterval(() => {
+                timeLeft--; updateClockDisplay();
+                document.getElementById('timerBar').style.width = (timeLeft/totalTimeSet)*100 + "%";
+                if (timeLeft <= 0) { clearInterval(timerInterval); [523, 659, 783].forEach((f, i) => setTimeout(() => playBeep(f, 0.5), i * 200)); saveTimeProgress(); alert("🕒 時間到！紀錄已上傳雲端。"); resetTimer(); }
+            }, 1000);
+        } else { isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 繼續"; clearInterval(timerInterval); }
+    }
+
+    function toggleMetronome() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (metroRunning) { window.cancelAnimationFrame(timerID); metroRunning = false; document.getElementById('metroBtn').innerText = "啟動"; }
+        else { currentBeat = 0; nextTickTime = audioCtx.currentTime; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; }
+    }
+    function scheduler() {
+        while (nextTickTime < audioCtx.currentTime + 0.1) {
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            const b = parseInt(document.getElementById('beatType').value);
+            const a = (b > 0 && currentBeat === 0);
+            const userVol = parseFloat(document.getElementById('volSlider').value);
+            const finalVol = userVol * 1.4; 
+            o.frequency.setValueAtTime(a ? 1200 : 800, nextTickTime);
+            g.gain.setValueAtTime(a ? finalVol * 0.6 : finalVol * 0.25, nextTickTime);
+            g.gain.exponentialRampToValueAtTime(0.001, nextTickTime + 0.05);
+            o.connect(g); g.connect(audioCtx.destination); o.start(nextTickTime); o.stop(nextTickTime + 0.05);
+            nextTickTime += 60.0 / (document.getElementById('bpmInput').value || 100);
+            if (b > 0) currentBeat = (currentBeat + 1) % b;
+        }
+        timerID = window.requestAnimationFrame(scheduler);
+    }
+    function updateClockDisplay() {
+        const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        const s = (timeLeft % 60).toString().padStart(2, '0');
+        document.getElementById('mainClock').innerText = `${m}:${s}`;
+    }
+    function resetTimer() {
+        clearInterval(timerInterval); isTimerRunning = false;
+        document.getElementById('timerBtn').innerText = "▶ 開始";
+        timeLeft = (parseInt(document.getElementById('setMinutes').value) || 20) * 60;
+        totalTimeSet = timeLeft; updateClockDisplay(); document.getElementById('timerBar').style.width = "100%";
+    }
+    function addQuickNote() {
+        const sel = document.getElementById('quickNotes');
+        if (sel.value) { const editor = document.getElementById('teacherNoteEdit'); editor.value += (editor.value ? "\n" : "") + sel.value; sel.value = ""; }
+    }
+    function handleTaskEdit(i) { const newText = prompt("編輯練習項目：", appData.tasks[i].text); if (newText !== null && newText.trim() !== "") { appData.tasks[i].text = newText; saveAndRefresh(); } }
+    function resetStars() { if (confirm("確定要將星星兌換並歸零嗎？")) { const start = new Date(appData.weekStart); let totalSec = 0; for (let i = 0; i < 7; i++) { const curr = new Date(start); curr.setDate(start.getDate() + i); totalSec += (appData.stats[curr.toISOString().split('T')[0]] || 0); } appData.baseMinutes = Math.floor(totalSec / 60); saveAndRefresh(); } }
+    function syncNewStartValue() { count = parseInt(document.getElementById('customCountSet').value) || 5; document.getElementById('countNum').innerText = count; }
+    function addScaleTask() { const k = document.getElementById('scaleKey').value; const b = document.getElementById('scaleBpm').value; appData.tasks.push({text: `🎹 音階：${k} (${b} BPM)`}); saveAndRefresh(); }
+    function addTask() { const v = document.getElementById('newTaskInput').value; if(v){ appData.tasks.push({text:v}); document.getElementById('newTaskInput').value=''; saveAndRefresh(); } }
+    function deleteTask(i) { appData.tasks.splice(i,1); saveAndRefresh(); }
+    function saveAndRefresh() { saveData(); renderUI(); }
+    function updateSaveSelect() { const s = document.getElementById('saveSelect'); s.innerHTML=''; saveList.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.text=n; if(n===currentSaveName) o.selected=true; s.add(o); }); }
     function switchSave() { currentSaveName=document.getElementById('saveSelect').value; init(); }
-    function createNewSave() { const n=prompt("輸入新檔案或學生名稱："); if(n && !saveList.includes(n)){ saveList.push(n); currentSaveName=n; appData={tasks:[], stats:{}, threshold:30, weekStart:new Date().toISOString().split('T')[0]}; saveData(); init(); } }
+    function createNewSave() { const n=prompt("輸入新學生名稱："); if(n && !saveList.includes(n)){ saveList.push(n); currentSaveName=n; appData={tasks:[], stats:{}, threshold:30, weekStart:new Date().toISOString().split('T')[0], baseMinutes:0, teacherNote: ""}; saveData(); init(); } }
 
     init();
 </script>
