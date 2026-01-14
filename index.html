@@ -324,15 +324,14 @@
     }
     function selectTask(text) { document.getElementById('currentTaskTitle').innerText = "正在練習：" + text; }
     function handleTaskEdit(i) { const n = prompt("編輯項目：", appData.tasks[i].text); if (n) { appData.tasks[i].text = n; saveAndRefresh(); } }
-    function handleCounterClick() { const startVal = parseInt(document.getElementById('customCountSet').value) || 5; if (count > 1) { count--; playBeep(1000, 0.1); document.getElementById('countNum').innerText = count; } else { count = 0; document.getElementById('countNum').innerText = 0; playBeep(1600, 0.4); setTimeout(() => { count = startVal; document.getElementById('countNum').innerText = count; }, 500); } }
 
-    function playBeep(f, d) { 
+    /* --- 計次器專用：固定小音量函式 --- */
+    function playFixedBeep(f, d) { 
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
         const o = audioCtx.createOscillator(); 
         const g = audioCtx.createGain(); 
-        const vol = document.getElementById('volSlider') ? document.getElementById('volSlider').value : 0.7;
         o.frequency.setValueAtTime(f, audioCtx.currentTime); 
-        g.gain.setValueAtTime(vol * 0.2, audioCtx.currentTime); 
+        g.gain.setValueAtTime(0.2, audioCtx.currentTime); // 固定 0.2
         g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d); 
         o.connect(g); 
         g.connect(audioCtx.destination); 
@@ -340,16 +339,72 @@
         o.stop(audioCtx.currentTime + d); 
     }
 
-    function toggleMetronome() { if (!audioCtx) audioCtx = new AudioContext(); if (metroRunning) { window.cancelAnimationFrame(timerID); metroRunning = false; document.getElementById('metroBtn').innerText = "啟動"; } else { nextTickTime = audioCtx.currentTime; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; } }
-    function scheduler() { while (nextTickTime < audioCtx.currentTime + 0.1) { playBeep(currentBeat === 0 ? 1000 : 800, 0.05); nextTickTime += 60 / document.getElementById('bpmInput').value; currentBeat = (currentBeat + 1) % (parseInt(document.getElementById('beatType').value) || 4); } timerID = window.requestAnimationFrame(scheduler); }
+    function handleCounterClick() { 
+        const startVal = parseInt(document.getElementById('customCountSet').value) || 5; 
+        if (count > 1) { 
+            count--; 
+            playFixedBeep(1000, 0.1); // 改用固定音量
+            document.getElementById('countNum').innerText = count; 
+        } else { 
+            count = 0; 
+            document.getElementById('countNum').innerText = 0; 
+            playFixedBeep(1600, 0.4); // 改用固定音量
+            setTimeout(() => { count = startVal; document.getElementById('countNum').innerText = count; }, 500); 
+        } 
+    }
+
+    /* 節拍器音源 - 隨滑桿改變音量 */
+    function playBeep(f, d) { 
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+        const o = audioCtx.createOscillator(); 
+        const g = audioCtx.createGain(); 
+        const vol = document.getElementById('volSlider') ? parseFloat(document.getElementById('volSlider').value) : 0.7;
+        
+        o.frequency.setValueAtTime(f, audioCtx.currentTime); 
+        g.gain.setValueAtTime(vol * 0.8, audioCtx.currentTime); 
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d); 
+        
+        o.connect(g); 
+        g.connect(audioCtx.destination); 
+        o.start(); 
+        o.stop(audioCtx.currentTime + d); 
+    }
+
+    function toggleMetronome() { 
+        if (!audioCtx) audioCtx = new AudioContext(); 
+        if (metroRunning) { 
+            window.cancelAnimationFrame(timerID); 
+            metroRunning = false; 
+            document.getElementById('metroBtn').innerText = "啟動"; 
+        } else { 
+            nextTickTime = audioCtx.currentTime; 
+            currentBeat = 0;
+            scheduler(); 
+            metroRunning = true; 
+            document.getElementById('metroBtn').innerText = "停止"; 
+        } 
+    }
+
+    function scheduler() { 
+        const bpm = document.getElementById('bpmInput').value;
+        const beatType = parseInt(document.getElementById('beatType').value);
+        while (nextTickTime < audioCtx.currentTime + 0.1) { 
+            let frequency = 800; 
+            if (beatType > 0 && currentBeat === 0) frequency = 1200; 
+            playBeep(frequency, 0.05); 
+            nextTickTime += 60 / bpm; 
+            if (beatType > 0) currentBeat = (currentBeat + 1) % beatType; 
+            else currentBeat = 0;
+        } 
+        timerID = window.requestAnimationFrame(scheduler); 
+    }
+
     function syncNewStartValue() { count = parseInt(document.getElementById('customCountSet').value) || 5; document.getElementById('countNum').innerText = count; }
-    
     function resetTimer() { clearInterval(timerInterval); isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 開始"; timeLeft = (parseInt(document.getElementById('setMinutes').value) || 20) * 60; totalTimeSet = timeLeft; updateClockDisplay(); document.getElementById('timerBar').style.width = "100%"; }
     function toggleTimer() { if (!isTimerRunning) { isTimerRunning = true; document.getElementById('timerBtn').innerText = "⏸ 暫停"; timerInterval = setInterval(() => { timeLeft--; updateClockDisplay(); document.getElementById('timerBar').style.width = (timeLeft/totalTimeSet)*100 + "%"; if (timeLeft <= 0) { clearInterval(timerInterval); saveTimeProgress(); alert("時間到！"); resetTimer(); } }, 1000); } else { isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 繼續"; clearInterval(timerInterval); } }
     function updateClockDisplay() { const m = Math.floor(timeLeft / 60).toString().padStart(2, '0'); const s = (timeLeft % 60).toString().padStart(2, '0'); document.getElementById('mainClock').innerText = `${m}:${s}`; }
     function saveTimeProgress() { const today = new Date().toISOString().split('T')[0]; appData.stats[today] = (appData.stats[today] || 0) + totalTimeSet; saveAndRefresh(); }
 
-    /* 錄音功能 - 優化版 */
     async function startRecording() {
         try {
             mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
