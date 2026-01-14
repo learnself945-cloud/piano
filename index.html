@@ -63,14 +63,13 @@
         .btn-warm { background: var(--caramel); color: white; }
         .btn-soft { background: var(--warm-pink); color: var(--warm-wood); }
         .btn-pdf { background: #5a8dee; color: white; font-size: 11px; }
-        .btn-danger { background: var(--light-coffee); color: white; font-size: 10px; display: none; margin-left: 10px; }
         
         .counter-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--warm-pink); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 4px solid white; font-size: 32px; font-weight: bold; margin: 10px auto; color: var(--warm-wood); }
         #taskLockBtn { background: #eee; border: 2px solid var(--caramel); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         #taskLockBtn.unlocked { background: var(--warm-pink); transform: rotate(15deg); }
 
         @media print {
-            .file-manager, .timer-section, .recorder-section, .tools-grid, .admin-section, #weekStartDate, .btn-warm, .btn-soft, .btn-danger, .btn-pdf, .task-item button, #taskLockBtn, input, select, textarea { display: none !important; }
+            .file-manager, .timer-section, .recorder-section, .tools-grid, .admin-section, #weekStartDate, .btn-warm, .btn-soft, .btn-pdf, .task-item button, #taskLockBtn, input, select, textarea { display: none !important; }
             body { background: white; padding: 0; }
             .app-card { border: none; box-shadow: none; width: 100%; padding: 0; }
         }
@@ -107,7 +106,7 @@
         <div style="font-size: 11px; opacity: 0.9;">
             ⭐ 每 <input type="number" id="starThreshold" value="30" min="1" disabled style="width: 30px; border:none; background:transparent; color:inherit; text-align:center; font-weight:bold;"> 分鐘得一星
             <button onclick="toggleStarLock()" id="lockBtn" style="padding: 2px 6px; font-size: 9px; background: #744b35; color: white;">🔑 管理</button>
-            <button onclick="resetStars()" id="resetStarBtn" class="btn-danger">🗑️ 星星歸零</button>
+            <button onclick="resetStars()" id="resetStarBtn" style="display:none; padding: 2px 6px; font-size: 9px; background: #a67c52; color: white;">🗑️ 星星歸零</button>
         </div>
     </div>
     
@@ -207,15 +206,13 @@
 <div style="margin-top: 25px; font-size: 14px; color: var(--caramel); font-weight: bold;">設計者：陳欣宜 2026</div>
 
 <script>
-    /* 核心變數 */
+    /* 變數宣告 */
     let mediaRecorder, audioChunks = [], audioBlob, audioUrl;
     let audioCtx = null, metroRunning = false, nextTickTime = 0, currentBeat = 0, timerID = null;
     let timerInterval = null, timeLeft = 1200, totalTimeSet = 1200, isTimerRunning = false, isStarLocked = true, isTaskLocked = true;
     let count = 5;
     const MASTER_PWD = "888";
     const DEFAULT_BOOKS = ["哈農", "芬貝爾", "彈唱曲集", "佈爾格彌勒", "視奏"];
-    
-    // 快速評價範本
     const DEFAULT_NOTES = [
         { label: "✨ 表現優異", content: "本週表現非常出色，音準與節奏掌握得很好，請繼續保持！" },
         { label: "🎹 注意手型", content: "練習時請注意手型，支撐好掌關節，避免手指塌陷。" },
@@ -230,7 +227,43 @@
 
     function init() { loadData(); updateSaveSelect(); updateBookDatalist(); updateNoteSelect(); renderUI(); resetTimer(); }
 
-    /* 評價保護鎖邏輯 */
+    /* iPad 錄音相容邏輯 */
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            // iPad/iOS 相容性檢測
+            let mimeType = 'audio/webm';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'audio/mp4'; 
+            }
+
+            mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                audioBlob = new Blob(audioChunks, { type: mimeType });
+                audioUrl = URL.createObjectURL(audioBlob);
+                const playback = document.getElementById('audioPlayback');
+                playback.src = audioUrl;
+                playback.style.display = 'block';
+                document.getElementById('downloadRec').style.display = 'inline-block';
+            };
+
+            mediaRecorder.start();
+            document.getElementById('startRec').disabled = true;
+            document.getElementById('stopRec').disabled = false;
+            document.getElementById('recIndicator').style.display = 'block';
+        } catch (err) {
+            alert("錄音失敗。請確認：\n1. 已允許麥克風權限。\n2. 使用的是 Safari 瀏覽器。\n3. 網址為 HTTPS 安全連線。");
+        }
+    }
+
+    function stopRecording() { if (mediaRecorder) mediaRecorder.stop(); document.getElementById('startRec').disabled = false; document.getElementById('stopRec').disabled = true; document.getElementById('recIndicator').style.display = 'none'; }
+    function downloadAudio() { const a = document.createElement('a'); a.href = audioUrl; a.download = `錄音_${new Date().getTime()}.mp4`; a.click(); }
+
+    /* 評價保護鎖 */
     function toggleStarLock() {
         if (isStarLocked) {
             if (prompt("密碼：") === MASTER_PWD) {
@@ -250,7 +283,7 @@
         }
     }
 
-    /* 存檔管理 */
+    /* 存檔功能 */
     function loadData() {
         const raw = localStorage.getItem(`v_data_v2026_${currentSaveName}`);
         appData = raw ? JSON.parse(raw) : { tasks: [], stats: {}, threshold: 30, weekStart: new Date().toISOString().split('T')[0], baseMinutes: 0, teacherNote: "" };
@@ -269,9 +302,8 @@
         localStorage.setItem('v_save_v2026', currentSaveName);
     }
     function saveAndRefresh() { saveData(); renderUI(); }
-
     function renameCurrentSave() {
-        const n = prompt("將「" + currentSaveName + "」更名為：", currentSaveName);
+        const n = prompt("更名為：", currentSaveName);
         if (n && n !== currentSaveName) {
             const oldKey = `v_data_v2026_${currentSaveName}`;
             saveList = saveList.map(name => name === currentSaveName ? n : name);
@@ -291,11 +323,7 @@
     function switchSave() { currentSaveName=document.getElementById('saveSelect').value; init(); }
     function createNewSave() {
         const n=prompt("輸入新學生名稱：");
-        if(n && !saveList.includes(n)){
-            saveList.push(n); currentSaveName=n;
-            appData={tasks:[], stats:{}, threshold:30, weekStart:new Date().toISOString().split('T')[0], baseMinutes:0, teacherNote: ""};
-            saveAndRefresh(); updateSaveSelect();
-        }
+        if(n && !saveList.includes(n)){ saveList.push(n); currentSaveName=n; saveAndRefresh(); init(); }
     }
 
     /* UI 渲染 */
@@ -326,7 +354,12 @@
         document.getElementById('teacherNoteDisplay').innerText = appData.teacherNote || "";
     }
 
-    /* 工具功能 */
+    /* 計時器 & 工具 */
+    function resetTimer() { clearInterval(timerInterval); isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 開始"; timeLeft = (parseInt(document.getElementById('setMinutes').value) || 20) * 60; totalTimeSet = timeLeft; updateClockDisplay(); document.getElementById('timerBar').style.width = "100%"; }
+    function toggleTimer() { if (!isTimerRunning) { isTimerRunning = true; document.getElementById('timerBtn').innerText = "⏸ 暫停"; timerInterval = setInterval(() => { timeLeft--; updateClockDisplay(); document.getElementById('timerBar').style.width = (timeLeft/totalTimeSet)*100 + "%"; if (timeLeft <= 0) { clearInterval(timerInterval); saveTimeProgress(); alert("時間到！"); resetTimer(); } }, 1000); } else { isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 繼續"; clearInterval(timerInterval); } }
+    function updateClockDisplay() { const m = Math.floor(timeLeft / 60).toString().padStart(2, '0'); const s = (timeLeft % 60).toString().padStart(2, '0'); document.getElementById('mainClock').innerText = `${m}:${s}`; }
+    function saveTimeProgress() { const today = new Date().toISOString().split('T')[0]; appData.stats[today] = (appData.stats[today] || 0) + totalTimeSet; saveAndRefresh(); }
+    
     function toggleTaskLock() {
         isTaskLocked = !isTaskLocked;
         const btn = document.getElementById('taskLockBtn');
@@ -338,30 +371,12 @@
     function selectTask(text) { document.getElementById('currentTaskTitle').innerText = "正在練習：" + text; }
     function handleTaskEdit(i) { const n = prompt("編輯項目：", appData.tasks[i].text); if (n) { appData.tasks[i].text = n; saveAndRefresh(); } }
     function handleCounterClick() { const startVal = parseInt(document.getElementById('customCountSet').value) || 5; if (count > 1) { count--; playBeep(1000, 0.1); document.getElementById('countNum').innerText = count; } else { count = 0; document.getElementById('countNum').innerText = 0; playBeep(1600, 0.4); setTimeout(() => { count = startVal; document.getElementById('countNum').innerText = count; }, 500); } }
-    function playBeep(f, d) { if (!audioCtx) audioCtx = new AudioContext(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d); }
-    function toggleMetronome() { if (!audioCtx) audioCtx = new AudioContext(); if (metroRunning) { window.cancelAnimationFrame(timerID); metroRunning = false; document.getElementById('metroBtn').innerText = "啟動"; } else { nextTickTime = audioCtx.currentTime; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; } }
+    function playBeep(f, d) { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d); }
+    function toggleMetronome() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (metroRunning) { window.cancelAnimationFrame(timerID); metroRunning = false; document.getElementById('metroBtn').innerText = "啟動"; } else { nextTickTime = audioCtx.currentTime; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; } }
     function scheduler() { while (nextTickTime < audioCtx.currentTime + 0.1) { playBeep(currentBeat === 0 ? 1000 : 800, 0.05); nextTickTime += 60 / document.getElementById('bpmInput').value; currentBeat = (currentBeat + 1) % (parseInt(document.getElementById('beatType').value) || 4); } timerID = window.requestAnimationFrame(scheduler); }
     function syncNewStartValue() { count = parseInt(document.getElementById('customCountSet').value) || 5; document.getElementById('countNum').innerText = count; }
-    
-    function resetTimer() { clearInterval(timerInterval); isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 開始"; timeLeft = (parseInt(document.getElementById('setMinutes').value) || 20) * 60; totalTimeSet = timeLeft; updateClockDisplay(); document.getElementById('timerBar').style.width = "100%"; }
-    function toggleTimer() { if (!isTimerRunning) { isTimerRunning = true; document.getElementById('timerBtn').innerText = "⏸ 暫停"; timerInterval = setInterval(() => { timeLeft--; updateClockDisplay(); document.getElementById('timerBar').style.width = (timeLeft/totalTimeSet)*100 + "%"; if (timeLeft <= 0) { clearInterval(timerInterval); saveTimeProgress(); alert("時間到！"); resetTimer(); } }, 1000); } else { isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 繼續"; clearInterval(timerInterval); } }
-    function updateClockDisplay() { const m = Math.floor(timeLeft / 60).toString().padStart(2, '0'); const s = (timeLeft % 60).toString().padStart(2, '0'); document.getElementById('mainClock').innerText = `${m}:${s}`; }
-    function saveTimeProgress() { const today = new Date().toISOString().split('T')[0]; appData.stats[today] = (appData.stats[today] || 0) + totalTimeSet; saveAndRefresh(); }
 
-    /* 錄音功能 */
-    async function startRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream); audioChunks = [];
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = () => { audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); audioUrl = URL.createObjectURL(audioBlob); document.getElementById('audioPlayback').src = audioUrl; document.getElementById('audioPlayback').style.display = 'block'; document.getElementById('downloadRec').style.display = 'inline-block'; };
-            mediaRecorder.start(); document.getElementById('startRec').disabled = true; document.getElementById('stopRec').disabled = false; document.getElementById('recIndicator').style.display = 'block';
-        } catch (err) { alert("錄音失敗"); }
-    }
-    function stopRecording() { if (mediaRecorder) mediaRecorder.stop(); document.getElementById('startRec').disabled = false; document.getElementById('stopRec').disabled = true; document.getElementById('recIndicator').style.display = 'none'; }
-    function downloadAudio() { const a = document.createElement('a'); a.href = audioUrl; a.download = `錄音_${new Date().getTime()}.webm`; a.click(); }
-
-    /* 快速新增 & 評語範本 */
+    /* 快速新增 */
     function applySmartTemplate() { const b = document.getElementById('bookInput').value; const p = document.getElementById('pageInput').value; if (!b) return; appData.tasks.push({ text: b + (p ? " " + p : "") }); saveAndRefresh(); }
     function addScaleTask() { appData.tasks.push({text: `🎹 音階：${document.getElementById('scaleKey').value} (${document.getElementById('scaleBpm').value} BPM)`}); saveAndRefresh(); }
     function addTask() { const v = document.getElementById('newTaskInput').value; if(v){ appData.tasks.push({text:v}); document.getElementById('newTaskInput').value=''; saveAndRefresh(); } }
@@ -386,15 +401,14 @@
 
     /* 匯出匯入 */
     function exportBackupFile() {
-        const today = new Date().toISOString().split('T')[0];
         const backupData = { studentName: currentSaveName, content: appData };
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${currentSaveName}_backup_${today}.json`; a.click();
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${currentSaveName}_backup.json`; a.click();
     }
     function importBackupFile(event) {
         const file = event.target.files[0]; if (!file) return;
         const reader = new FileReader();
-        reader.onload = function(e) { try { const data = JSON.parse(e.target.result); if (confirm(`載入「${data.studentName}」？`)) { appData = data.content; saveAndRefresh(); } } catch (err) { alert("格式錯誤"); } event.target.value = ""; };
+        reader.onload = function(e) { try { const data = JSON.parse(e.target.result); if (confirm(`載入「${data.studentName}」？`)) { appData = data.content; saveAndRefresh(); } } catch (err) { alert("格式錯誤"); } };
         reader.readAsText(file);
     }
     function exportData() { const obj = { tasks: appData.tasks, teacherNote: appData.teacherNote }; const code = btoa(encodeURIComponent(JSON.stringify(obj))); navigator.clipboard.writeText(code).then(() => alert("代碼已複製")); }
