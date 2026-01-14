@@ -13,47 +13,38 @@
         body { background: var(--bg-paper); font-family: 'Microsoft JhengHei', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; color: var(--warm-wood); }
         .app-card { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 30px; border: 8px solid var(--warm-pink); box-shadow: 0 10px 30px rgba(140,90,68,0.1); position: relative; }
         
-        /* 檔案管理 */
         .file-manager { display: flex; gap: 8px; margin-bottom: 15px; background: var(--caramel); padding: 10px 20px; border-radius: 50px; color: white; align-items: center; justify-content: center; }
         .file-manager select { background: white; border-radius: 5px; padding: 3px; border: none; color: var(--warm-wood); font-weight: bold; }
 
-        /* 計時器區 */
         .timer-section { background: var(--cream); padding: 25px; border-radius: 25px; margin-bottom: 15px; text-align: center; border: 3px solid var(--caramel); }
         .timer-display { font-size: 64px; font-family: 'Verdana', sans-serif; font-weight: bold; color: var(--warm-wood); margin: 5px 0; }
         .progress-container { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 100%; background: var(--caramel); width: 100%; transition: width 1s linear; }
 
-        /* 錄音室區 */
         .recorder-section { background: #fff; padding: 15px; border-radius: 20px; border: 2px solid var(--warm-pink); margin-bottom: 20px; text-align: center; }
         .rec-active { color: #e74c3c; font-weight: bold; animation: blink 1s infinite; margin-bottom: 5px; display: none; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
         audio { width: 100%; margin-top: 10px; height: 35px; }
 
-        /* 獎勵區 */
         .reward-banner { background: var(--milk-tea); color: var(--warm-wood); padding: 15px; border-radius: 20px; text-align: center; margin-bottom: 15px; border: 1px solid #c8ab8f; }
         .star-display { font-size: 36px; color: var(--gold); margin-bottom: 5px; min-height: 45px; word-break: break-all; }
         
-        /* 統計區 */
         .stats-section { background: rgba(255, 218, 224, 0.3); padding: 15px; border-radius: 20px; margin-bottom: 15px; border: 2px dashed var(--caramel); }
         .stats-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .day-box { font-size: 11px; background: white; padding: 8px 2px; border-radius: 12px; border: 1px solid var(--warm-pink); }
         .day-box.today { background: var(--caramel); color: white; border: 1px solid var(--warm-wood); }
 
-        /* 管理面板 */
         .admin-section { display: none; background: var(--warm-pink); padding: 15px; border-radius: 20px; margin-bottom: 20px; border: 2px solid var(--caramel); }
         .admin-sub-card { background: white; padding: 12px; border-radius: 15px; margin-bottom: 10px; border: 1px solid var(--milk-tea); }
         
-        /* 工具區 */
         .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .tool-box { border: 2px solid var(--warm-pink); padding: 15px; border-radius: 20px; background: white; text-align: center; }
         
-        /* 練習清單 */
         .task-list { list-style: none; padding: 0; margin: 0; }
         .task-item { display: flex; align-items: center; padding: 12px; background: white; border-radius: 12px; margin-bottom: 8px; border: 1px solid #f0e6d2; gap: 10px; }
         .task-text { flex: 1; font-size: 15px; color: var(--warm-wood); }
         .task-text.editable { cursor: pointer; text-decoration: underline dotted; }
 
-        /* 評價區 */
         .teacher-note-area { margin-top: 20px; padding: 15px; background: #fffcf5; border: 2px solid var(--warm-pink); border-radius: 15px; }
         #teacherNoteDisplay { min-height: 50px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #555; }
         #noteEditorContainer { display: none; flex-direction: column; gap: 10px; }
@@ -136,6 +127,7 @@
                 BPM: <input type="number" id="bpmInput" value="100" style="width:40px;">
                 <select id="beatType" style="width:55px;"><option value="0">無</option><option value="2">2/4</option><option value="3">3/4</option><option value="4">4/4</option><option value="6">6/8</option></select>
             </div>
+            <div style="font-size: 10px; color: var(--caramel); margin-bottom: 2px;">🔊 音量</div>
             <input type="range" id="volSlider" style="width:100%;" min="0" max="1" step="0.1" value="0.7">
             <button class="btn-warm" onclick="toggleMetronome()" id="metroBtn" style="width:100%; margin-top:5px;">啟動</button>
         </div>
@@ -215,7 +207,6 @@
     const MASTER_PWD = "888";
     const DEFAULT_BOOKS = ["哈農", "芬貝爾", "彈唱曲集", "佈爾格彌勒", "視奏"];
     
-    // 快速評價範本
     const DEFAULT_NOTES = [
         { label: "✨ 表現優異", content: "本週表現非常出色，音準與節奏掌握得很好，請繼續保持！" },
         { label: "🎹 注意手型", content: "練習時請注意手型，支撐好掌關節，避免手指塌陷。" },
@@ -230,7 +221,6 @@
 
     function init() { loadData(); updateSaveSelect(); updateBookDatalist(); updateNoteSelect(); renderUI(); resetTimer(); }
 
-    /* 評價保護鎖邏輯 */
     function toggleStarLock() {
         if (isStarLocked) {
             if (prompt("密碼：") === MASTER_PWD) {
@@ -250,7 +240,6 @@
         }
     }
 
-    /* 存檔管理 */
     function loadData() {
         const raw = localStorage.getItem(`v_data_v2026_${currentSaveName}`);
         appData = raw ? JSON.parse(raw) : { tasks: [], stats: {}, threshold: 30, weekStart: new Date().toISOString().split('T')[0], baseMinutes: 0, teacherNote: "" };
@@ -298,7 +287,6 @@
         }
     }
 
-    /* UI 渲染 */
     function renderUI() {
         const grid = document.getElementById('statsGrid'); grid.innerHTML = '';
         const start = new Date(appData.weekStart);
@@ -326,7 +314,6 @@
         document.getElementById('teacherNoteDisplay').innerText = appData.teacherNote || "";
     }
 
-    /* 工具功能 */
     function toggleTaskLock() {
         isTaskLocked = !isTaskLocked;
         const btn = document.getElementById('taskLockBtn');
@@ -338,7 +325,21 @@
     function selectTask(text) { document.getElementById('currentTaskTitle').innerText = "正在練習：" + text; }
     function handleTaskEdit(i) { const n = prompt("編輯項目：", appData.tasks[i].text); if (n) { appData.tasks[i].text = n; saveAndRefresh(); } }
     function handleCounterClick() { const startVal = parseInt(document.getElementById('customCountSet').value) || 5; if (count > 1) { count--; playBeep(1000, 0.1); document.getElementById('countNum').innerText = count; } else { count = 0; document.getElementById('countNum').innerText = 0; playBeep(1600, 0.4); setTimeout(() => { count = startVal; document.getElementById('countNum').innerText = count; }, 500); } }
-    function playBeep(f, d) { if (!audioCtx) audioCtx = new AudioContext(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d); }
+
+    function playBeep(f, d) { 
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+        const o = audioCtx.createOscillator(); 
+        const g = audioCtx.createGain(); 
+        const vol = document.getElementById('volSlider') ? document.getElementById('volSlider').value : 0.7;
+        o.frequency.setValueAtTime(f, audioCtx.currentTime); 
+        g.gain.setValueAtTime(vol * 0.2, audioCtx.currentTime); 
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d); 
+        o.connect(g); 
+        g.connect(audioCtx.destination); 
+        o.start(); 
+        o.stop(audioCtx.currentTime + d); 
+    }
+
     function toggleMetronome() { if (!audioCtx) audioCtx = new AudioContext(); if (metroRunning) { window.cancelAnimationFrame(timerID); metroRunning = false; document.getElementById('metroBtn').innerText = "啟動"; } else { nextTickTime = audioCtx.currentTime; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; } }
     function scheduler() { while (nextTickTime < audioCtx.currentTime + 0.1) { playBeep(currentBeat === 0 ? 1000 : 800, 0.05); nextTickTime += 60 / document.getElementById('bpmInput').value; currentBeat = (currentBeat + 1) % (parseInt(document.getElementById('beatType').value) || 4); } timerID = window.requestAnimationFrame(scheduler); }
     function syncNewStartValue() { count = parseInt(document.getElementById('customCountSet').value) || 5; document.getElementById('countNum').innerText = count; }
@@ -348,63 +349,32 @@
     function updateClockDisplay() { const m = Math.floor(timeLeft / 60).toString().padStart(2, '0'); const s = (timeLeft % 60).toString().padStart(2, '0'); document.getElementById('mainClock').innerText = `${m}:${s}`; }
     function saveTimeProgress() { const today = new Date().toISOString().split('T')[0]; appData.stats[today] = (appData.stats[today] || 0) + totalTimeSet; saveAndRefresh(); }
 
-    /* 錄音功能 - iPad 資源釋放優化版 */
+    /* 錄音功能 - 優化版 */
     async function startRecording() {
         try {
-            // 每次重新獲取 Stream
             mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            
-            // iPad/Safari 優先支援 mp4，次之 webm
             let mimeType = 'audio/mp4';
             if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/webm';
-
             mediaRecorder = new MediaRecorder(mediaStream, { mimeType: mimeType });
             audioChunks = [];
-            
             mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-            
             mediaRecorder.onstop = () => {
-                // 停止錄音後，徹底關閉所有麥克風軌道
-                if (mediaStream) {
-                    mediaStream.getTracks().forEach(track => track.stop());
-                    mediaStream = null;
-                }
-                
+                if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
                 audioBlob = new Blob(audioChunks, { type: mimeType });
                 audioUrl = URL.createObjectURL(audioBlob);
                 document.getElementById('audioPlayback').src = audioUrl;
                 document.getElementById('audioPlayback').style.display = 'block';
                 document.getElementById('downloadRec').style.display = 'inline-block';
             };
-            
             mediaRecorder.start();
             document.getElementById('startRec').disabled = true;
             document.getElementById('stopRec').disabled = false;
             document.getElementById('recIndicator').style.display = 'block';
-        } catch (err) {
-            alert("錄音失敗，請確認是否允許麥克風權限。");
-        }
+        } catch (err) { alert("錄音失敗"); }
     }
+    function stopRecording() { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); document.getElementById('startRec').disabled = false; document.getElementById('stopRec').disabled = true; document.getElementById('recIndicator').style.display = 'none'; }
+    function downloadAudio() { const a = document.createElement('a'); a.href = audioUrl; const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm'; a.download = `錄音_${new Date().getTime()}.${ext}`; a.click(); }
 
-    function stopRecording() {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-        }
-        document.getElementById('startRec').disabled = false;
-        document.getElementById('stopRec').disabled = true;
-        document.getElementById('recIndicator').style.display = 'none';
-    }
-
-    function downloadAudio() {
-        const a = document.createElement('a');
-        a.href = audioUrl;
-        // 根據 Blob 類型給副檔名
-        const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
-        a.download = `錄音_${new Date().getTime()}.${ext}`;
-        a.click();
-    }
-
-    /* 快速新增 & 評語範本 */
     function applySmartTemplate() { const b = document.getElementById('bookInput').value; const p = document.getElementById('pageInput').value; if (!b) return; appData.tasks.push({ text: b + (p ? " " + p : "") }); saveAndRefresh(); }
     function addScaleTask() { appData.tasks.push({text: `🎹 音階：${document.getElementById('scaleKey').value} (${document.getElementById('scaleBpm').value} BPM)`}); saveAndRefresh(); }
     function addTask() { const v = document.getElementById('newTaskInput').value; if(v){ appData.tasks.push({text:v}); document.getElementById('newTaskInput').value=''; saveAndRefresh(); } }
@@ -427,7 +397,6 @@
     }
     function addNewQuickNote() { const c = prompt("評語內容："); if(c){ const l = prompt("簡稱：", c.substring(0,4)); DEFAULT_NOTES.push({label:l, content:c}); updateNoteSelect(); } }
 
-    /* 匯出匯入 */
     function exportBackupFile() {
         const today = new Date().toISOString().split('T')[0];
         const backupData = { studentName: currentSaveName, content: appData };
