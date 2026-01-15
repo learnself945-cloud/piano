@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,19 @@
             --warm-pink: #ffdae0; --caramel: #d4a373; --gold: #f1c40f; --alert: #e67e22;
             --milk-tea: #ddc1a7; --light-coffee: #a67c52;
         }
-        body { background: var(--bg-paper); font-family: 'Microsoft JhengHei', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; color: var(--warm-wood); }
+        
+        body { 
+            background: var(--bg-paper); 
+            font-family: "PingFang TC", "Noto Sans TC", "Heiti TC", "Microsoft JhengHei", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            color: var(--warm-wood); 
+        }
+
         .app-card { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 30px; border: 8px solid var(--warm-pink); box-shadow: 0 10px 30px rgba(140,90,68,0.1); position: relative; }
         
         .file-manager { display: flex; gap: 8px; margin-bottom: 15px; background: var(--caramel); padding: 10px 20px; border-radius: 50px; color: white; align-items: center; justify-content: center; }
@@ -45,12 +57,15 @@
         .task-text { flex: 1; font-size: 15px; color: var(--warm-wood); }
         .task-text.editable { cursor: pointer; text-decoration: underline dotted; }
 
-        .teacher-note-area { margin-top: 20px; padding: 15px; background: #fffcf5; border: 2px solid var(--warm-pink); border-radius: 15px; }
+        .teacher-note-area { margin-top: 20px; padding: 15px; background: #fffcf5; border: 2px solid var(--warm-pink); border-radius: 15px; position: relative; }
         #teacherNoteDisplay { min-height: 50px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #555; }
         #noteEditorContainer { display: none; flex-direction: column; gap: 10px; }
         #teacherNoteEdit { width: 100%; min-height: 80px; border: 1px solid var(--caramel); border-radius: 8px; padding: 8px; font-family: inherit; box-sizing: border-box; }
+        
+        .speak-btn { cursor: pointer; font-size: 20px; margin-left: 10px; vertical-align: middle; transition: transform 0.2s; display: inline-block; }
+        .speak-btn:active { transform: scale(1.2); }
 
-        button { cursor: pointer; border: none; border-radius: 12px; font-weight: bold; transition: 0.2s; padding: 8px 12px; }
+        button { cursor: pointer; border: none; border-radius: 12px; font-weight: bold; transition: 0.2s; padding: 8px 12px; font-family: inherit; }
         .btn-warm { background: var(--caramel); color: white; }
         .btn-soft { background: var(--warm-pink); color: var(--warm-wood); }
         .btn-pdf { background: #5a8dee; color: white; font-size: 11px; }
@@ -61,7 +76,7 @@
         #taskLockBtn.unlocked { background: var(--warm-pink); transform: rotate(15deg); }
 
         @media print {
-            .file-manager, .timer-section, .recorder-section, .tools-grid, .admin-section, #weekStartDate, .btn-warm, .btn-soft, .btn-danger, .btn-pdf, .task-item button, #taskLockBtn, input, select, textarea { display: none !important; }
+            .file-manager, .timer-section, .recorder-section, .tools-grid, .admin-section, #weekStartDate, .btn-warm, .btn-soft, .btn-danger, .btn-pdf, .task-item button, #taskLockBtn, input, select, textarea, .speak-btn { display: none !important; }
             body { background: white; padding: 0; }
             .app-card { border: none; box-shadow: none; width: 100%; padding: 0; }
         }
@@ -87,7 +102,7 @@
         <div class="timer-display" id="mainClock">20:00</div>
         <div class="progress-container"><div class="progress-bar" id="timerBar"></div></div>
         <div style="display: flex; justify-content: center; gap: 8px; align-items: center;">
-            <input type="number" id="setMinutes" value="20" min="1" style="width: 40px; text-align: center;"> 分
+            <input type="number" id="setMinutes" value="20" min="1" style="width: 40px; text-align: center; font-family: inherit;"> 分
             <button class="btn-warm" id="timerBtn" onclick="toggleTimer()">▶ 開始</button>
             <button class="btn-soft" onclick="resetTimer()">🔄 重置</button>
         </div>
@@ -96,7 +111,7 @@
     <div class="reward-banner">
         <div id="starContainer" class="star-display"></div>
         <div style="font-size: 11px; opacity: 0.9;">
-            ⭐ 每 <input type="number" id="starThreshold" value="30" min="1" disabled style="width: 30px; border:none; background:transparent; color:inherit; text-align:center; font-weight:bold;"> 分鐘得一星
+            ⭐ 每 <input type="number" id="starThreshold" value="30" min="1" disabled style="width: 30px; border:none; background:transparent; color:inherit; text-align:center; font-weight:bold; font-family: inherit;"> 分鐘得一星
             <button onclick="toggleStarLock()" id="lockBtn" style="padding: 2px 6px; font-size: 9px; background: #744b35; color: white;">🔑 管理</button>
             <button onclick="resetStars()" id="resetStarBtn" class="btn-danger">🗑️ 星星歸零</button>
         </div>
@@ -104,7 +119,7 @@
     
     <div class="stats-section">
         <div style="text-align: center; font-size: 11px; margin-bottom: 10px; color: var(--caramel);">
-            📅 每週起始日：<input type="date" id="weekStartDate" onchange="saveAndRefresh()">
+            📅 每週起始日：<input type="date" id="weekStartDate" onchange="saveAndRefresh()" style="font-family: inherit;">
         </div>
         <div class="stats-grid" id="statsGrid"></div>
     </div>
@@ -124,8 +139,8 @@
         <div class="tool-box">
             <h4 style="margin:0 0 5px 0">🥁 節拍器</h4>
             <div style="font-size: 11px; margin-bottom: 5px;">
-                BPM: <input type="number" id="bpmInput" value="100" style="width:40px;">
-                <select id="beatType" style="width:55px;"><option value="0">無</option><option value="2">2/4</option><option value="3">3/4</option><option value="4">4/4</option><option value="6">6/8</option></select>
+                BPM: <input type="number" id="bpmInput" value="100" style="width:40px; font-family: inherit;">
+                <select id="beatType" style="width:55px; font-family: inherit;"><option value="0">無</option><option value="2">2/4</option><option value="3">3/4</option><option value="4">4/4</option><option value="6">6/8</option></select>
             </div>
             <div style="font-size: 10px; color: var(--caramel); margin-bottom: 2px;">🔊 音量</div>
             <input type="range" id="volSlider" style="width:100%;" min="0" max="1" step="0.1" value="0.7">
@@ -134,7 +149,7 @@
         <div class="tool-box">
             <h4 style="margin:0 0 5px 0">🔢 計次</h4>
             <div class="counter-btn" onclick="handleCounterClick()" id="countNum">5</div>
-            <input type="number" id="customCountSet" value="5" min="1" style="width: 35px; text-align: center;" oninput="syncNewStartValue()"> 次
+            <input type="number" id="customCountSet" value="5" min="1" style="width: 35px; text-align: center; font-family: inherit;" oninput="syncNewStartValue()"> 次
         </div>
     </div>
 
@@ -144,22 +159,22 @@
             <div style="background: rgba(140,90,68,0.05); padding: 10px; border-radius: 10px; margin-bottom: 12px; border: 1px dashed var(--caramel);">
                 <div style="font-size: 12px; margin-bottom: 5px; font-weight: bold;">⚡ 快速派發範本 (書名+頁碼)</div>
                 <div style="display:flex; gap:5px;">
-                    <input type="text" id="bookInput" list="bookList" placeholder="書名(如:芬貝爾)" style="flex:1">
+                    <input type="text" id="bookInput" list="bookList" placeholder="書名(如:芬貝爾)" style="flex:1; font-family: inherit;">
                     <datalist id="bookList"></datalist>
-                    <input type="text" id="pageInput" placeholder="頁/編號" style="width: 60px;">
+                    <input type="text" id="pageInput" placeholder="頁/編號" style="width: 60px; font-family: inherit;">
                     <button class="btn-warm" onclick="applySmartTemplate()">派發</button>
                 </div>
             </div>
             <div style="display:flex; gap:5px; margin-bottom:10px;">
-                <select id="scaleKey" style="flex:1">
+                <select id="scaleKey" style="flex:1; font-family: inherit;">
                     <optgroup label="大調 Major"><option>C Major</option><option>G Major</option><option>D Major</option><option>A Major</option><option>E Major</option><option>B Major</option><option>F# Major</option><option>C# Major</option><option>F Major</option><option>Bb Major</option><option>Eb Major</option><option>Ab Major</option><option>Db Major</option><option>Gb Major</option><option>Cb Major</option></optgroup>
                     <optgroup label="小調 minor"><option>a minor</option><option>e minor</option><option>b minor</option><option>f# minor</option><option>c# minor</option><option>g# minor</option><option>d# minor</option><option>a# minor</option><option>d minor</option><option>g minor</option><option>c minor</option><option>f minor</option><option>bb minor</option><option>eb minor</option><option>ab minor</option></optgroup>
                 </select>
-                速度: <input type="number" id="scaleBpm" value="60" style="width: 40px;">
+                速度: <input type="number" id="scaleBpm" value="60" style="width: 40px; font-family: inherit;">
                 <button class="btn-warm" onclick="addScaleTask()">加音階</button>
             </div>
             <div style="display: flex; gap: 5px;">
-                <input type="text" id="newTaskInput" placeholder="自訂練習內容..." style="flex: 1;">
+                <input type="text" id="newTaskInput" placeholder="自訂練習內容..." style="flex: 1; font-family: inherit;">
                 <button class="btn-warm" onclick="addTask()">新增</button>
             </div>
         </div>
@@ -184,14 +199,17 @@
     <ul class="task-list" id="taskList"></ul>
 
     <div class="teacher-note-area">
-        <h4 style="margin: 0 0 10px 0; color: var(--warm-wood); font-size: 16px; border-left: 5px solid var(--caramel); padding-left: 10px;">📝 本週評價及注意事項</h4>
+        <h4 style="margin: 0 0 10px 0; color: var(--warm-wood); font-size: 16px; border-left: 5px solid var(--caramel); padding-left: 10px; display: flex; align-items: center;">
+            📝 本週評價及注意事項
+            <span class="speak-btn" onclick="speakNote()" title="朗讀評價">📢</span>
+        </h4>
         <div id="teacherNoteDisplay"></div>
         <div id="noteEditorContainer">
             <div style="display:flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
-                <div style="font-size: 11px;">快速評語：<select id="quickNotes" onchange="addQuickNote()" style="width: 100px;"></select></div>
+                <div style="font-size: 11px;">快速評語：<select id="quickNotes" onchange="addQuickNote()" style="width: 100px; font-family: inherit;"></select></div>
                 <button onclick="addNewQuickNote()" style="font-size: 10px; background: #8c5a44; color: white;">➕ 新增範本</button>
             </div>
-            <textarea id="teacherNoteEdit" placeholder="在此輸入評價..."></textarea>
+            <textarea id="teacherNoteEdit" placeholder="在此輸入評價..." style="font-family: inherit;"></textarea>
         </div>
     </div>
 </div>
@@ -208,11 +226,12 @@
     const DEFAULT_BOOKS = ["哈農", "芬貝爾", "彈唱曲集", "佈爾格彌勒", "視奏"];
     
     const DEFAULT_NOTES = [
-        { label: "✨ 表現優異", content: "本週表現非常出色，音準與節奏掌握得很好，請繼續保持！" },
+        { label: "✨ 表現優異", content: "本週表現非常不錯，節奏和流暢度都有進步，請繼續保持！" },
         { label: "🎹 注意手型", content: "練習時請注意手型，支撐好掌關節，避免手指塌陷。" },
         { label: "👂 聽力加強", content: "彈奏時多聽自己的聲音，注意強弱對比與樂句的流暢度。" },
         { label: "⏱️ 慢速練習", content: "新曲子請務必先慢速練習，待指法熟練後再逐步加快速度。" },
         { label: "✅ 完成目標", content: "恭喜完成本週目標！下週我們將挑戰新的進度。" }
+
     ];
 
     let currentSaveName = localStorage.getItem('v_save_v2026') || '預設存檔';
@@ -238,6 +257,17 @@
             document.getElementById('noteEditorContainer').style.display = "none";
             saveAndRefresh();
         }
+    }
+
+    function speakNote() {
+        const text = appData.teacherNote || "";
+        if (!text) { alert("目前沒有評價內容可以朗讀喔！"); return; }
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-TW';
+        utterance.rate = 0.9; 
+        utterance.pitch = 1.4; 
+        window.speechSynthesis.speak(utterance);
     }
 
     function loadData() {
@@ -325,13 +355,12 @@
     function selectTask(text) { document.getElementById('currentTaskTitle').innerText = "正在練習：" + text; }
     function handleTaskEdit(i) { const n = prompt("編輯項目：", appData.tasks[i].text); if (n) { appData.tasks[i].text = n; saveAndRefresh(); } }
 
-    /* --- 計次器專用：固定小音量函式 --- */
     function playFixedBeep(f, d) { 
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
         const o = audioCtx.createOscillator(); 
         const g = audioCtx.createGain(); 
         o.frequency.setValueAtTime(f, audioCtx.currentTime); 
-        g.gain.setValueAtTime(0.2, audioCtx.currentTime); // 固定 0.2
+        g.gain.setValueAtTime(0.2, audioCtx.currentTime); 
         g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d); 
         o.connect(g); 
         g.connect(audioCtx.destination); 
@@ -343,27 +372,24 @@
         const startVal = parseInt(document.getElementById('customCountSet').value) || 5; 
         if (count > 1) { 
             count--; 
-            playFixedBeep(1000, 0.1); // 改用固定音量
+            playFixedBeep(1000, 0.1); 
             document.getElementById('countNum').innerText = count; 
         } else { 
             count = 0; 
             document.getElementById('countNum').innerText = 0; 
-            playFixedBeep(1600, 0.4); // 改用固定音量
+            playFixedBeep(1600, 0.4); 
             setTimeout(() => { count = startVal; document.getElementById('countNum').innerText = count; }, 500); 
         } 
     }
 
-    /* 節拍器音源 - 隨滑桿改變音量 */
     function playBeep(f, d) { 
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
         const o = audioCtx.createOscillator(); 
         const g = audioCtx.createGain(); 
         const vol = document.getElementById('volSlider') ? parseFloat(document.getElementById('volSlider').value) : 0.7;
-        
         o.frequency.setValueAtTime(f, audioCtx.currentTime); 
         g.gain.setValueAtTime(vol * 0.8, audioCtx.currentTime); 
         g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d); 
-        
         o.connect(g); 
         g.connect(audioCtx.destination); 
         o.start(); 
@@ -452,12 +478,29 @@
     }
     function addNewQuickNote() { const c = prompt("評語內容："); if(c){ const l = prompt("簡稱：", c.substring(0,4)); DEFAULT_NOTES.push({label:l, content:c}); updateNoteSelect(); } }
 
+    /* 改進的匯出功能：支援自訂檔名 */
     function exportBackupFile() {
         const today = new Date().toISOString().split('T')[0];
-        const backupData = { studentName: currentSaveName, content: appData };
+        const defaultFileName = `${currentSaveName}_backup_${today}`;
+        
+        // 彈出對話框詢問檔名
+        const customName = prompt("請輸入匯出的檔案名稱：", defaultFileName);
+        
+        // 如果使用者點擊取消或沒輸入，則不執行匯出
+        if (customName === null) return;
+        const finalFileName = (customName.trim() || defaultFileName) + ".json";
+
+        const backupData = { studentName: currentSaveName, content: appData, exportDate: today };
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${currentSaveName}_backup_${today}.json`; a.click();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = finalFileName;
+        a.click();
+        
+        // 提醒使用者如何設定儲存位置
+        console.log("提示：若要更改儲存位置，請在瀏覽器設定中開啟『下載前詢問儲存位置』。");
     }
+
     function importBackupFile(event) {
         const file = event.target.files[0]; if (!file) return;
         const reader = new FileReader();
