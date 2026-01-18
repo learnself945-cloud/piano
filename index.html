@@ -219,14 +219,13 @@
     let timerInterval = null, timeLeft = 1200, totalTimeSet = 1200, isTimerRunning = false, isStarLocked = true, isTaskLocked = true;
     let count = 5;
     const MASTER_PWD = "888";
-    const DEFAULT_BOOKS = ["哈農", "芬貝爾", "彈唱曲集", "佈爾格彌勒", "視奏", "和絃", "小奏鳴曲"];
+    const DEFAULT_BOOKS = ["哈農", "芬貝爾", "彈唱曲集", "佈爾格彌勒", "視奏"];
     const DEFAULT_NOTES = [
         { label: "✨ 表現優異", content: "本週表現非常不錯，節奏和流暢度都有進步，請繼續保持！" },
         { label: "🎹 注意手型", content: "練習時請注意手型，支撐好掌關節，避免手指塌陷。" },
         { label: "👂 聽力加強", content: "彈奏時多聽自己的聲音，注意強弱對比與樂句的流暢度。" },
         { label: "⏱️ 慢速練習", content: "新曲子請務必先慢速練習，待指法熟練後再逐步加快速度。" },
         { label: "✅ 完成目標", content: "恭喜完成本週目標！下週我們將挑戰新的進度。" }
-        { label: “提醒繳費", content: "下週為第一堂課，請抽空繳費" }
     ];
 
     let currentSaveName = localStorage.getItem('v_save_v2026') || '預設存檔';
