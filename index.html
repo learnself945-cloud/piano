@@ -216,6 +216,220 @@
 
 <div style="margin-top: 25px; font-size: 14px; color: var(--caramel); font-weight: bold;">設計者：陳欣宜 2026</div>
 
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎹 Vivace 練琴助手 - 陳欣宜 2026</title>
+    <style>
+        :root { 
+            --bg-paper: #fff9f0; --warm-wood: #8c5a44; --cream: #fdf6e3; 
+            --warm-pink: #ffdae0; --caramel: #d4a373; --gold: #f1c40f; --alert: #e67e22;
+            --milk-tea: #ddc1a7; --light-coffee: #a67c52;
+        }
+        
+        body { 
+            background: var(--bg-paper); 
+            font-family: "PingFang TC", "Noto Sans TC", "Heiti TC", "Microsoft JhengHei", sans-serif;
+            display: flex; flex-direction: column; align-items: center; padding: 20px; color: var(--warm-wood); 
+        }
+
+        .app-card { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 30px; border: 8px solid var(--warm-pink); box-shadow: 0 10px 30px rgba(140,90,68,0.1); position: relative; }
+        .file-manager { display: flex; gap: 8px; margin-bottom: 15px; background: var(--caramel); padding: 10px 20px; border-radius: 50px; color: white; align-items: center; justify-content: center; }
+        .file-manager select { background: white; border-radius: 5px; padding: 3px; border: none; color: var(--warm-wood); font-weight: bold; }
+
+        .timer-section { background: var(--cream); padding: 25px; border-radius: 25px; margin-bottom: 15px; text-align: center; border: 3px solid var(--caramel); }
+        .timer-display { font-size: 64px; font-family: 'Verdana', sans-serif; font-weight: bold; color: var(--warm-wood); margin: 5px 0; }
+        .progress-container { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--caramel); width: 100%; transition: width 1s linear; }
+
+        .recorder-section { background: #fff; padding: 15px; border-radius: 20px; border: 2px solid var(--warm-pink); margin-bottom: 20px; text-align: center; }
+        .rec-active { color: #e74c3c; font-weight: bold; animation: blink 1s infinite; margin-bottom: 5px; display: none; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        audio { width: 100%; margin-top: 10px; height: 35px; }
+
+        .reward-banner { background: var(--milk-tea); color: var(--warm-wood); padding: 15px; border-radius: 20px; text-align: center; margin-bottom: 15px; border: 1px solid #c8ab8f; }
+        .star-display { font-size: 36px; color: var(--gold); margin-bottom: 5px; min-height: 45px; word-break: break-all; }
+        
+        .stats-section { background: rgba(255, 218, 224, 0.3); padding: 15px; border-radius: 20px; margin-bottom: 15px; border: 2px dashed var(--caramel); }
+        .stats-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .day-box { font-size: 11px; background: white; padding: 8px 2px; border-radius: 12px; border: 1px solid var(--warm-pink); }
+        .day-box.today { background: var(--caramel); color: white; border: 1px solid var(--warm-wood); }
+
+        .admin-section { display: none; background: var(--warm-pink); padding: 15px; border-radius: 20px; margin-bottom: 20px; border: 2px solid var(--caramel); }
+        .admin-sub-card { background: white; padding: 12px; border-radius: 15px; margin-bottom: 10px; border: 1px solid var(--milk-tea); }
+        
+        .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .tool-box { border: 2px solid var(--warm-pink); padding: 15px; border-radius: 20px; background: white; text-align: center; }
+        
+        .task-list { list-style: none; padding: 0; margin: 0; }
+        .task-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 12px; margin-bottom: 8px; border: 1px solid #f0e6d2; gap: 8px; }
+        .task-text { flex: 1; font-size: 15px; color: var(--warm-wood); }
+        .task-text.editable { cursor: pointer; text-decoration: underline dotted; }
+
+        .teacher-note-area { margin-top: 20px; padding: 15px; background: #fffcf5; border: 2px solid var(--warm-pink); border-radius: 15px; position: relative; }
+        #teacherNoteDisplay { min-height: 50px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #555; }
+        #noteEditorContainer { display: none; flex-direction: column; gap: 10px; }
+        #teacherNoteEdit { width: 100%; min-height: 80px; border: 1px solid var(--caramel); border-radius: 8px; padding: 8px; font-family: inherit; box-sizing: border-box; }
+        
+        .speak-btn { cursor: pointer; font-size: 18px; transition: 0.2s; background: none; border: none; padding: 0 5px; }
+        .speak-btn:hover { transform: scale(1.2); }
+
+        button { cursor: pointer; border: none; border-radius: 12px; font-weight: bold; transition: 0.2s; padding: 8px 12px; font-family: inherit; }
+        .btn-warm { background: var(--caramel); color: white; }
+        .btn-soft { background: var(--warm-pink); color: var(--warm-wood); }
+        .template-tag { background: #fff; border: 1px solid var(--caramel); font-size: 11px; padding: 4px 8px; border-radius: 8px; cursor: pointer; }
+        .template-tag:hover { background: var(--warm-pink); }
+        
+        .counter-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--warm-pink); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 4px solid white; font-size: 32px; font-weight: bold; margin: 10px auto; color: var(--warm-wood); }
+        #taskLockBtn { background: #eee; border: 2px solid var(--caramel); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        #taskLockBtn.unlocked { background: var(--warm-pink); transform: rotate(15deg); }
+
+        @media print {
+            .file-manager, .timer-section, .recorder-section, .tools-grid, .admin-section, #weekStartDate, .btn-warm, .btn-soft, .task-item button, #taskLockBtn, input, select, textarea, .speak-btn { display: none !important; }
+            .app-card { border: none; box-shadow: none; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="file-manager">
+    <span>📁 學生：</span>
+    <select id="saveSelect" onchange="switchSave()"></select>
+    <button onclick="createNewSave()" style="background:#555; color:white; font-size:11px;">➕ 新增</button>
+    <button onclick="renameCurrentSave()" style="background:transparent; border:1px solid white; color:white; font-size:10px;">✏️ 改名</button>
+</div>
+
+<div class="app-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: var(--warm-wood);" id="displayName">📊 練琴紀錄</h3>
+        <span style="background:var(--caramel); color:white; padding:4px 12px; border-radius:15px; font-size:12px;" id="weekTotalDisplay">總計: 0 分</span>
+    </div>
+
+    <div class="timer-section">
+        <div style="font-size: 13px; color: var(--caramel); margin-bottom: 5px;" id="currentTaskTitle">請點選下方練習項目</div>
+        <div class="timer-display" id="mainClock">20:00</div>
+        <div class="progress-container"><div class="progress-bar" id="timerBar"></div></div>
+        <div style="display: flex; justify-content: center; gap: 8px; align-items: center;">
+            <input type="number" id="setMinutes" value="20" min="1" style="width: 40px; text-align: center; font-family: inherit;"> 分
+            <button class="btn-warm" id="timerBtn" onclick="toggleTimer()">▶ 開始</button>
+            <button class="btn-soft" onclick="resetTimer()">🔄 重置</button>
+        </div>
+    </div>
+
+    <div class="reward-banner">
+        <div id="starContainer" class="star-display"></div>
+        <div style="font-size: 11px; opacity: 0.9;">
+            ⭐ 每 <input type="number" id="starThreshold" value="30" min="1" disabled style="width: 30px; border:none; background:transparent; color:inherit; text-align:center; font-weight:bold; font-family: inherit;"> 分鐘得一星
+            <button onclick="toggleStarLock()" id="lockBtn" style="padding: 2px 6px; font-size: 9px; background: #744b35; color: white;">🔑 管理</button>
+            <button onclick="resetStars()" id="resetStarBtn" class="btn-danger" style="display:none; background:#a67c52; color:white; font-size:10px;">🗑️ 星星歸零</button>
+        </div>
+    </div>
+    
+    <div class="stats-section">
+        <div style="text-align: center; font-size: 11px; margin-bottom: 10px; color: var(--caramel);">
+            📅 每週起始日：<input type="date" id="weekStartDate" onchange="saveAndRefresh()" style="font-family: inherit;">
+        </div>
+        <div class="stats-grid" id="statsGrid"></div>
+    </div>
+
+    <div class="recorder-section">
+        <h4 style="margin: 0 0 10px 0; font-size: 15px;">🎙️ 自我檢聽錄音室</h4>
+        <div id="recIndicator" class="rec-active">🔴 Recording...</div>
+        <div style="display: flex; justify-content: center; gap: 8px;">
+            <button id="startRec" class="btn-warm" onclick="startRecording()" style="background: #2ecc71;">⏺ 錄音</button>
+            <button id="stopRec" class="btn-warm" onclick="stopRecording()" disabled style="background:#e74c3c; color:white;">⏹ 停止</button>
+            <button id="downloadRec" class="btn-soft" onclick="downloadAudio()" style="display:none;">💾 下載</button>
+        </div>
+        <audio id="audioPlayback" controls style="display:none;"></audio>
+    </div>
+
+    <div class="tools-grid">
+        <div class="tool-box">
+            <h4 style="margin:0 0 5px 0">🥁 節拍器</h4>
+            <div style="font-size: 11px; margin-bottom: 5px;">
+                BPM: <input type="number" id="bpmInput" value="100" style="width:40px; font-family: inherit;">
+                <select id="beatType" style="width:55px; font-family: inherit;"><option value="0">無</option><option value="2">2/4</option><option value="3">3/4</option><option value="4">4/4</option><option value="6">6/8</option></select>
+            </div>
+            <div style="font-size: 10px; color: var(--caramel); margin-bottom: 2px;">🔊 音量</div>
+            <input type="range" id="volSlider" style="width:100%;" min="0" max="1" step="0.1" value="0.7">
+            <button class="btn-warm" onclick="toggleMetronome()" id="metroBtn" style="width:100%; margin-top:5px;">啟動</button>
+        </div>
+        <div class="tool-box">
+            <h4 style="margin:0 0 5px 0">🔢 計次</h4>
+            <div class="counter-btn" onclick="handleCounterClick()" id="countNum">5</div>
+            <input type="number" id="customCountSet" value="5" min="1" style="width: 35px; text-align: center; font-family: inherit;" oninput="syncNewStartValue()"> 次
+        </div>
+    </div>
+
+    <div id="adminPanel" class="admin-section">
+        <div class="admin-sub-card">
+            <h4 style="margin:0 0 10px 0; color:var(--warm-wood)">✨ 內容快速新增</h4>
+            <div style="background: rgba(140,90,68,0.05); padding: 10px; border-radius: 10px; margin-bottom: 12px; border: 1px dashed var(--caramel);">
+                <div style="font-size: 12px; margin-bottom: 5px; font-weight: bold;">⚡ 快速派發範本 (書名+頁碼)</div>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="bookInput" list="bookList" placeholder="書名(如:芬貝爾)" style="flex:1; font-family: inherit;">
+                    <datalist id="bookList"></datalist>
+                    <input type="text" id="pageInput" placeholder="頁/編號" style="width: 60px; font-family: inherit;">
+                    <button class="btn-warm" onclick="applySmartTemplate()">派發</button>
+                    <button class="btn-soft" onclick="saveAsCustomTemplate()" style="background:#f1c40f; color:white;">💾 存為範本</button>
+                </div>
+                <div id="customTemplateList" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;"></div>
+            </div>
+            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <select id="scaleKey" style="flex:1; font-family: inherit;">
+                    <optgroup label="大調 Major"><option>C Major</option><option>G Major</option><option>D Major</option><option>A Major</option><option>E Major</option><option>B Major</option><option>F# Major</option><option>C# Major</option><option>F Major</option><option>Bb Major</option><option>Eb Major</option><option>Ab Major</option><option>Db Major</option><option>Gb Major</option><option>Cb Major</option></optgroup>
+                    <optgroup label="小調 minor"><option>a minor</option><option>e minor</option><option>b minor</option><option>f# minor</option><option>c# minor</option><option>g# minor</option><option>d# minor</option><option>a# minor</option><option>d minor</option><option>g minor</option><option>c minor</option><option>f minor</option><option>bb minor</option><option>eb minor</option><option>ab minor</option></optgroup>
+                </select>
+                速度: <input type="number" id="scaleBpm" value="60" style="width: 40px; font-family: inherit;">
+                <button class="btn-warm" onclick="addScaleTask()">加音階</button>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="newTaskInput" placeholder="自訂練習內容..." style="flex: 1; font-family: inherit;">
+                <button class="btn-warm" onclick="addTask()">新增</button>
+            </div>
+        </div>
+        <div class="admin-sub-card" style="background: var(--milk-tea); border: 2px solid var(--light-coffee);">
+            <h4 style="margin:0 0 10px 0; color:var(--warm-wood)">💾 存檔與備份管理</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom: 10px;">
+                <button onclick="exportBackupFile()" class="btn-warm" style="background: #5a8dee; font-size: 11px;">💾 匯出 (.json)</button>
+                <button onclick="document.getElementById('fileInput').click()" class="btn-warm" style="background: #2ecc71; font-size: 11px;">📂 匯入 (.json)</button>
+                <input type="file" id="fileInput" style="display:none;" accept=".json" onchange="importBackupFile(event)">
+                <button onclick="exportData()" class="btn-soft" style="background: white; border: 1px solid var(--caramel); font-size: 11px;">📤 複製代碼</button>
+                <button onclick="importData()" class="btn-soft" style="background: white; border: 1px solid var(--caramel); font-size: 11px;">📥 貼上代碼</button>
+            </div>
+            <button onclick="window.print()" class="btn-pdf" style="width: 100%; padding: 10px; font-size: 13px; background: #5a8dee; color: white;">🖨️ 產生 PDF 聯絡簿</button>
+        </div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <h3 style="color: var(--warm-wood); border-left: 5px solid var(--caramel); padding-left: 10px; margin: 0;">📅 每日練習項目</h3>
+            <button onclick="resetChecks()" title="重置所有勾選" style="background:none; color:var(--caramel); padding:0; font-size:18px;">🔄</button>
+        </div>
+        <div id="taskLockBtn" onclick="toggleTaskLock()">🔒</div>
+    </div>
+    <ul class="task-list" id="taskList"></ul>
+
+    <div class="teacher-note-area">
+        <h4 style="margin: 0 0 10px 0; color: var(--warm-wood); font-size: 16px; border-left: 5px solid var(--caramel); padding-left: 10px; display: flex; align-items: center;">
+            📝 本週評價及注意事項
+            <button class="speak-btn" onclick="speakNote()" title="朗讀評價">📢</button>
+        </h4>
+        <div id="teacherNoteDisplay"></div>
+        <div id="noteEditorContainer">
+            <div style="display:flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                <div style="font-size: 11px;">快速評語：<select id="quickNotes" onchange="addQuickNote()" style="width: 100px; font-family: inherit;"></select></div>
+                <button onclick="addNewQuickNote()" style="font-size: 10px; background: #8c5a44; color: white;">➕ 新增範本</button>
+            </div>
+            <textarea id="teacherNoteEdit" placeholder="在此輸入評價..." style="font-family: inherit;"></textarea>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 25px; font-size: 14px; color: var(--caramel); font-weight: bold;">設計者：陳欣宜 2026</div>
+
 <script>
     /* 核心變數 */
     let mediaRecorder, audioChunks = [], audioBlob, audioUrl, mediaStream = null;
@@ -224,62 +438,109 @@
     let count = 5;
     const MASTER_PWD = "888";
     const DEFAULT_BOOKS = ["哈農", "芬貝爾", "彈唱曲集", "佈爾格彌勒", "視奏"];
-    
     const DEFAULT_NOTES = [
         { label: "✨ 表現優異", content: "本週表現非常不錯，節奏和流暢度都有進步，請繼續保持！" },
         { label: "🎹 注意手型", content: "練習時請注意手型，支撐好掌關節，避免手指塌陷。" },
         { label: "👂 聽力加強", content: "彈奏時多聽自己的聲音，注意強弱對比與樂句的流暢度。" },
         { label: "⏱️ 慢速練習", content: "新曲子請務必先慢速練習，待指法熟練後再逐步加快速度。" },
         { label: "✅ 完成目標", content: "恭喜完成本週目標！下週我們將挑戰新的進度。" }
-
     ];
 
     let currentSaveName = localStorage.getItem('v_save_v2026') || '預設存檔';
     let saveList = JSON.parse(localStorage.getItem('v_list_v2026')) || ['預設存檔'];
     let appData = {};
 
-    function init() { loadData(); updateSaveSelect(); updateBookDatalist(); updateNoteSelect(); renderUI(); resetTimer(); }
+    // 用於記錄每個練習項目的勾選狀態（存檔用）
+    // 雖然 renderUI 會抓畫面的狀態，但主資料結構也要支援
+    function init() { loadData(); updateSaveSelect(); updateBookDatalist(); updateNoteSelect(); renderCustomTemplateButtons(); renderUI(); resetTimer(); }
 
-    function toggleStarLock() {
-        if (isStarLocked) {
-            if (prompt("密碼：") === MASTER_PWD) {
-                isStarLocked = false;
-                document.getElementById('starThreshold').disabled = false;
-                document.getElementById('resetStarBtn').style.display = "inline-block";
-                document.getElementById('teacherNoteDisplay').style.display = "none";
-                document.getElementById('noteEditorContainer').style.display = "flex";
-            }
+    // --- ✨ 語音切換開關修正 ---
+    function toggleSpeech(text) {
+        if (!text) return;
+        // 如果正在朗讀中，再按一下就停止
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
         } else {
-            isStarLocked = true;
-            document.getElementById('starThreshold').disabled = true;
-            document.getElementById('resetStarBtn').style.display = "none";
-            document.getElementById('teacherNoteDisplay').style.display = "block";
-            document.getElementById('noteEditorContainer').style.display = "none";
-            saveAndRefresh();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-TW';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
         }
     }
 
     function speakNote() {
-        const text = appData.teacherNote || "";
-        if (!text) { alert("目前沒有評價內容可以朗讀喔！"); return; }
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'zh-TW';
-        utterance.rate = 0.9; 
-        utterance.pitch = 1.4; 
-        window.speechSynthesis.speak(utterance);
+        toggleSpeech(appData.teacherNote || "目前沒有評價內容可以朗讀喔！");
+    }
+
+    // --- ✨ 重置勾選功能 ---
+    function resetChecks() {
+        if (confirm("要清除所有項目的勾選狀態嗎？")) {
+            const list = document.getElementById('taskList');
+            list.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            // 同時更新存檔資料（如果有存的話）
+            if(appData.tasks) appData.tasks.forEach(t => t.done = false);
+            saveData();
+        }
+    }
+
+    // --- 自訂模板功能 ---
+    function saveAsCustomTemplate() {
+        const book = document.getElementById('bookInput').value;
+        const page = document.getElementById('pageInput').value;
+        const content = book + (page ? " " + page : "");
+        if (!book) { alert("請先輸入書名！"); return; }
+        
+        const name = prompt("請為此範本命名：", book);
+        if (name) {
+            let templates = JSON.parse(localStorage.getItem('v_custom_templates')) || {};
+            templates[name] = content;
+            localStorage.setItem('v_custom_templates', JSON.stringify(templates));
+            renderCustomTemplateButtons();
+        }
+    }
+
+    function renderCustomTemplateButtons() {
+        const container = document.getElementById('customTemplateList');
+        const templates = JSON.parse(localStorage.getItem('v_custom_templates')) || {};
+        container.innerHTML = "";
+        Object.keys(templates).forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = "template-tag";
+            btn.innerText = name;
+            btn.onclick = () => { document.getElementById('bookInput').value = templates[name]; };
+            btn.oncontextmenu = (e) => {
+                e.preventDefault();
+                if (confirm("刪除此範本？")) {
+                    delete templates[name];
+                    localStorage.setItem('v_custom_templates', JSON.stringify(templates));
+                    renderCustomTemplateButtons();
+                }
+            };
+            container.appendChild(btn);
+        });
     }
 
     function loadData() {
         const raw = localStorage.getItem(`v_data_v2026_${currentSaveName}`);
         appData = raw ? JSON.parse(raw) : { tasks: [], stats: {}, threshold: 30, weekStart: new Date().toISOString().split('T')[0], baseMinutes: 0, teacherNote: "" };
+        // 確保 task 結構包含 done 屬性
+        if(appData.tasks) appData.tasks.forEach(t => { if(t.done === undefined) t.done = false; });
+        
         document.getElementById('starThreshold').value = appData.threshold || 30;
         document.getElementById('weekStartDate').value = appData.weekStart;
         document.getElementById('displayName').innerText = currentSaveName;
         document.getElementById('teacherNoteEdit').value = appData.teacherNote || "";
         syncNewStartValue();
     }
+
     function saveData() { 
+        // 儲存前更新勾選狀態到資料物件
+        const list = document.getElementById('taskList');
+        const checkBoxes = list.querySelectorAll('input[type="checkbox"]');
+        checkBoxes.forEach((cb, idx) => {
+            if(appData.tasks[idx]) appData.tasks[idx].done = cb.checked;
+        });
+
         appData.threshold = document.getElementById('starThreshold').value;
         appData.weekStart = document.getElementById('weekStartDate').value;
         appData.teacherNote = document.getElementById('teacherNoteEdit').value;
@@ -287,35 +548,8 @@
         localStorage.setItem('v_list_v2026', JSON.stringify(saveList));
         localStorage.setItem('v_save_v2026', currentSaveName);
     }
-    function saveAndRefresh() { saveData(); renderUI(); }
 
-    function renameCurrentSave() {
-        const n = prompt("將「" + currentSaveName + "」更名為：", currentSaveName);
-        if (n && n !== currentSaveName) {
-            const oldKey = `v_data_v2026_${currentSaveName}`;
-            saveList = saveList.map(name => name === currentSaveName ? n : name);
-            currentSaveName = n;
-            saveData(); localStorage.removeItem(oldKey);
-            init();
-        }
-    }
-    function updateSaveSelect() {
-        const s = document.getElementById('saveSelect'); s.innerHTML='';
-        saveList.forEach(n=>{
-            const o=document.createElement('option'); o.value=n; o.text=n;
-            if(n===currentSaveName) o.selected=true;
-            s.add(o);
-        });
-    }
-    function switchSave() { currentSaveName=document.getElementById('saveSelect').value; init(); }
-    function createNewSave() {
-        const n=prompt("輸入新學生名稱：");
-        if(n && !saveList.includes(n)){
-            saveList.push(n); currentSaveName=n;
-            appData={tasks:[], stats:{}, threshold:30, weekStart:new Date().toISOString().split('T')[0], baseMinutes:0, teacherNote: ""};
-            saveAndRefresh(); updateSaveSelect();
-        }
-    }
+    function saveAndRefresh() { saveData(); renderUI(); }
 
     function renderUI() {
         const grid = document.getElementById('statsGrid'); grid.innerHTML = '';
@@ -334,16 +568,41 @@
         const stars = Math.floor(Math.max(0, Math.floor(weekTotal/60) - (appData.baseMinutes || 0)) / (parseInt(appData.threshold) || 30));
         document.getElementById('starContainer').innerHTML = '⭐'.repeat(stars) || '✨';
         
-        const list = document.getElementById('taskList'); list.innerHTML = '';
+        const taskListEl = document.getElementById('taskList');
+        taskListEl.innerHTML = '';
         appData.tasks.forEach((t, i) => {
             const li = document.createElement('li'); li.className = `task-item`;
-            const deleteBtn = isTaskLocked ? '' : `<button onclick="deleteTask(${i})" style="color:#e74c3c; background:none;">✕</button>`;
-            li.innerHTML = `<input type="checkbox"><span class="${isTaskLocked ? 'task-text' : 'task-text editable'}" ${isTaskLocked ? `onclick="selectTask('${t.text}')"` : `onclick="handleTaskEdit(${i})"`}>${t.text}</span>${deleteBtn}`;
-            list.appendChild(li);
+            const deleteBtn = isTaskLocked ? '' : `<button onclick="deleteTask(${i})" style="color:#e74c3c; background:none; margin-left:auto;">✕</button>`;
+            
+            li.innerHTML = `
+                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="saveData()">
+                <span class="${isTaskLocked ? 'task-text' : 'task-text editable'}" ${isTaskLocked ? `onclick="selectTask('${t.text}')"` : `onclick="handleTaskEdit(${i})"`}>${t.text}</span>
+                <button class="speak-btn" onclick="toggleSpeech('${t.text}')">🔊</button>
+                ${deleteBtn}`;
+            taskListEl.appendChild(li);
         });
         document.getElementById('teacherNoteDisplay').innerText = appData.teacherNote || "";
     }
 
+    // --- 以下為原有邏輯 (計時、錄音、密碼、節拍器等) 保持不變 ---
+    function toggleStarLock() {
+        if (isStarLocked) {
+            if (prompt("密碼：") === MASTER_PWD) {
+                isStarLocked = false;
+                document.getElementById('starThreshold').disabled = false;
+                document.getElementById('resetStarBtn').style.display = "inline-block";
+                document.getElementById('teacherNoteDisplay').style.display = "none";
+                document.getElementById('noteEditorContainer').style.display = "flex";
+            }
+        } else {
+            isStarLocked = true;
+            document.getElementById('starThreshold').disabled = true;
+            document.getElementById('resetStarBtn').style.display = "none";
+            document.getElementById('teacherNoteDisplay').style.display = "block";
+            document.getElementById('noteEditorContainer').style.display = "none";
+            saveAndRefresh();
+        }
+    }
     function toggleTaskLock() {
         isTaskLocked = !isTaskLocked;
         const btn = document.getElementById('taskLockBtn');
@@ -354,114 +613,105 @@
     }
     function selectTask(text) { document.getElementById('currentTaskTitle').innerText = "正在練習：" + text; }
     function handleTaskEdit(i) { const n = prompt("編輯項目：", appData.tasks[i].text); if (n) { appData.tasks[i].text = n; saveAndRefresh(); } }
-
-    function playFixedBeep(f, d) { 
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-        const o = audioCtx.createOscillator(); 
-        const g = audioCtx.createGain(); 
-        o.frequency.setValueAtTime(f, audioCtx.currentTime); 
-        g.gain.setValueAtTime(0.2, audioCtx.currentTime); 
-        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d); 
-        o.connect(g); 
-        g.connect(audioCtx.destination); 
-        o.start(); 
-        o.stop(audioCtx.currentTime + d); 
+    function syncNewStartValue() { count = parseInt(document.getElementById('customCountSet').value) || 5; document.getElementById('countNum').innerText = count; }
+    function resetTimer() { clearInterval(timerInterval); isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 開始"; timeLeft = (parseInt(document.getElementById('setMinutes').value) || 20) * 60; totalTimeSet = timeLeft; updateClockDisplay(); document.getElementById('timerBar').style.width = "100%"; }
+    function toggleTimer() { 
+        if (!isTimerRunning) { 
+            isTimerRunning = true; document.getElementById('timerBtn').innerText = "⏸ 暫停"; 
+            timerInterval = setInterval(() => { 
+                timeLeft--; updateClockDisplay(); 
+                document.getElementById('timerBar').style.width = (timeLeft/totalTimeSet)*100 + "%"; 
+                if (timeLeft <= 0) { clearInterval(timerInterval); saveTimeProgress(); alert("時間到！"); resetTimer(); } 
+            }, 1000); 
+        } else { isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 繼續"; clearInterval(timerInterval); } 
     }
-
+    function updateClockDisplay() { const m = Math.floor(timeLeft / 60).toString().padStart(2, '0'); const s = (timeLeft % 60).toString().padStart(2, '0'); document.getElementById('mainClock').innerText = `${m}:${s}`; }
+    function saveTimeProgress() { const today = new Date().toISOString().split('T')[0]; appData.stats[today] = (appData.stats[today] || 0) + totalTimeSet; saveAndRefresh(); }
+    function applySmartTemplate() { const b = document.getElementById('bookInput').value; const p = document.getElementById('pageInput').value; if (!b) return; appData.tasks.push({ text: b + (p ? " " + p : ""), done: false }); saveAndRefresh(); }
+    function addScaleTask() { appData.tasks.push({text: `🎹 音階：${document.getElementById('scaleKey').value} (${document.getElementById('scaleBpm').value} BPM)`, done: false}); saveAndRefresh(); }
+    function addTask() { const v = document.getElementById('newTaskInput').value; if(v){ appData.tasks.push({text:v, done: false}); document.getElementById('newTaskInput').value=''; saveAndRefresh(); } }
+    function deleteTask(i) { appData.tasks.splice(i,1); saveAndRefresh(); }
     function handleCounterClick() { 
         const startVal = parseInt(document.getElementById('customCountSet').value) || 5; 
-        if (count > 1) { 
-            count--; 
-            playFixedBeep(1000, 0.1); 
-            document.getElementById('countNum').innerText = count; 
-        } else { 
-            count = 0; 
-            document.getElementById('countNum').innerText = 0; 
-            playFixedBeep(1600, 0.4); 
-            setTimeout(() => { count = startVal; document.getElementById('countNum').innerText = count; }, 500); 
-        } 
+        if (count > 1) { count--; playBeep(1000, 0.1); document.getElementById('countNum').innerText = count; } 
+        else { count = 0; document.getElementById('countNum').innerText = 0; playBeep(1600, 0.4); setTimeout(() => { count = startVal; document.getElementById('countNum').innerText = count; }, 500); } 
     }
-
-    function playBeep(f, d) { 
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-        const o = audioCtx.createOscillator(); 
-        const g = audioCtx.createGain(); 
-        const vol = document.getElementById('volSlider') ? parseFloat(document.getElementById('volSlider').value) : 0.7;
-        o.frequency.setValueAtTime(f, audioCtx.currentTime); 
-        g.gain.setValueAtTime(vol * 0.8, audioCtx.currentTime); 
-        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d); 
-        o.connect(g); 
-        g.connect(audioCtx.destination); 
-        o.start(); 
-        o.stop(audioCtx.currentTime + d); 
-    }
-
     function toggleMetronome() { 
         if (!audioCtx) audioCtx = new AudioContext(); 
-        if (metroRunning) { 
-            window.cancelAnimationFrame(timerID); 
-            metroRunning = false; 
-            document.getElementById('metroBtn').innerText = "啟動"; 
-        } else { 
-            nextTickTime = audioCtx.currentTime; 
-            currentBeat = 0;
-            scheduler(); 
-            metroRunning = true; 
-            document.getElementById('metroBtn').innerText = "停止"; 
-        } 
+        if (metroRunning) { window.cancelAnimationFrame(timerID); metroRunning = false; document.getElementById('metroBtn').innerText = "啟動"; } 
+        else { nextTickTime = audioCtx.currentTime; currentBeat = 0; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; } 
     }
-
     function scheduler() { 
         const bpm = document.getElementById('bpmInput').value;
         const beatType = parseInt(document.getElementById('beatType').value);
         while (nextTickTime < audioCtx.currentTime + 0.1) { 
-            let frequency = 800; 
-            if (beatType > 0 && currentBeat === 0) frequency = 1200; 
-            playBeep(frequency, 0.05); 
+            let freq = (beatType > 0 && currentBeat === 0) ? 1200 : 800; 
+            playBeep(freq, 0.05); 
             nextTickTime += 60 / bpm; 
-            if (beatType > 0) currentBeat = (currentBeat + 1) % beatType; 
-            else currentBeat = 0;
+            currentBeat = beatType > 0 ? (currentBeat + 1) % beatType : 0;
         } 
         timerID = window.requestAnimationFrame(scheduler); 
     }
-
-    function syncNewStartValue() { count = parseInt(document.getElementById('customCountSet').value) || 5; document.getElementById('countNum').innerText = count; }
-    function resetTimer() { clearInterval(timerInterval); isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 開始"; timeLeft = (parseInt(document.getElementById('setMinutes').value) || 20) * 60; totalTimeSet = timeLeft; updateClockDisplay(); document.getElementById('timerBar').style.width = "100%"; }
-    function toggleTimer() { if (!isTimerRunning) { isTimerRunning = true; document.getElementById('timerBtn').innerText = "⏸ 暫停"; timerInterval = setInterval(() => { timeLeft--; updateClockDisplay(); document.getElementById('timerBar').style.width = (timeLeft/totalTimeSet)*100 + "%"; if (timeLeft <= 0) { clearInterval(timerInterval); saveTimeProgress(); alert("時間到！"); resetTimer(); } }, 1000); } else { isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 繼續"; clearInterval(timerInterval); } }
-    function updateClockDisplay() { const m = Math.floor(timeLeft / 60).toString().padStart(2, '0'); const s = (timeLeft % 60).toString().padStart(2, '0'); document.getElementById('mainClock').innerText = `${m}:${s}`; }
-    function saveTimeProgress() { const today = new Date().toISOString().split('T')[0]; appData.stats[today] = (appData.stats[today] || 0) + totalTimeSet; saveAndRefresh(); }
-
+    function playBeep(f, d) { 
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); 
+        const vol = document.getElementById('volSlider') ? parseFloat(document.getElementById('volSlider').value) : 0.7;
+        o.frequency.setValueAtTime(f, audioCtx.currentTime); g.gain.setValueAtTime(vol * 0.2, audioCtx.currentTime); 
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d); 
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d); 
+    }
+    function switchSave() { currentSaveName=document.getElementById('saveSelect').value; init(); }
+    function updateSaveSelect() {
+        const s = document.getElementById('saveSelect'); s.innerHTML='';
+        saveList.forEach(n=>{
+            const o=document.createElement('option'); o.value=n; o.text=n;
+            if(n===currentSaveName) o.selected=true;
+            s.add(o);
+        });
+    }
+    function createNewSave() {
+        const n=prompt("輸入新學生名稱：");
+        if(n && !saveList.includes(n)){
+            saveList.push(n); currentSaveName=n;
+            appData={tasks:[], stats:{}, threshold:30, weekStart:new Date().toISOString().split('T')[0], baseMinutes:0, teacherNote: ""};
+            saveAndRefresh(); updateSaveSelect();
+        }
+    }
+    function renameCurrentSave() {
+        const n = prompt("將「" + currentSaveName + "」更名為：", currentSaveName);
+        if (n && n !== currentSaveName) {
+            const oldKey = `v_data_v2026_${currentSaveName}`;
+            saveList = saveList.map(name => name === currentSaveName ? n : name);
+            currentSaveName = n;
+            saveData(); localStorage.removeItem(oldKey);
+            init();
+        }
+    }
     async function startRecording() {
         try {
             mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            let mimeType = 'audio/mp4';
-            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/webm';
-            mediaRecorder = new MediaRecorder(mediaStream, { mimeType: mimeType });
+            let mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
+            mediaRecorder = new MediaRecorder(mediaStream, { mimeType });
             audioChunks = [];
             mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
             mediaRecorder.onstop = () => {
-                if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
                 audioBlob = new Blob(audioChunks, { type: mimeType });
                 audioUrl = URL.createObjectURL(audioBlob);
-                document.getElementById('audioPlayback').src = audioUrl;
-                document.getElementById('audioPlayback').style.display = 'block';
+                const pb = document.getElementById('audioPlayback'); pb.src = audioUrl; pb.style.display = 'block';
                 document.getElementById('downloadRec').style.display = 'inline-block';
             };
             mediaRecorder.start();
-            document.getElementById('startRec').disabled = true;
-            document.getElementById('stopRec').disabled = false;
+            document.getElementById('startRec').disabled = true; document.getElementById('stopRec').disabled = false;
             document.getElementById('recIndicator').style.display = 'block';
         } catch (err) { alert("錄音失敗"); }
     }
-    function stopRecording() { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); document.getElementById('startRec').disabled = false; document.getElementById('stopRec').disabled = true; document.getElementById('recIndicator').style.display = 'none'; }
-    function downloadAudio() { const a = document.createElement('a'); a.href = audioUrl; const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm'; a.download = `錄音_${new Date().getTime()}.${ext}`; a.click(); }
-
-    function applySmartTemplate() { const b = document.getElementById('bookInput').value; const p = document.getElementById('pageInput').value; if (!b) return; appData.tasks.push({ text: b + (p ? " " + p : "") }); saveAndRefresh(); }
-    function addScaleTask() { appData.tasks.push({text: `🎹 音階：${document.getElementById('scaleKey').value} (${document.getElementById('scaleBpm').value} BPM)`}); saveAndRefresh(); }
-    function addTask() { const v = document.getElementById('newTaskInput').value; if(v){ appData.tasks.push({text:v}); document.getElementById('newTaskInput').value=''; saveAndRefresh(); } }
-    function deleteTask(i) { appData.tasks.splice(i,1); saveAndRefresh(); }
-    function resetStars() { if (confirm("確定星星歸零嗎？")) { let totalSec = 0; Object.values(appData.stats).forEach(s => totalSec += s); appData.baseMinutes = Math.floor(totalSec / 60); saveAndRefresh(); } }
-    
+    function stopRecording() { 
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); 
+        if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+        document.getElementById('startRec').disabled = false; document.getElementById('stopRec').disabled = true;
+        document.getElementById('recIndicator').style.display = 'none'; 
+    }
+    function downloadAudio() { const a = document.createElement('a'); a.href = audioUrl; a.download = `錄音_${new Date().getTime()}.webm`; a.click(); }
     function updateBookDatalist() { const dl = document.getElementById('bookList'); dl.innerHTML = ""; DEFAULT_BOOKS.forEach(name => { const opt = document.createElement('option'); opt.value = name; dl.appendChild(opt); }); }
     function updateNoteSelect() {
         const sel = document.getElementById('quickNotes');
@@ -477,38 +727,30 @@
         }
     }
     function addNewQuickNote() { const c = prompt("評語內容："); if(c){ const l = prompt("簡稱：", c.substring(0,4)); DEFAULT_NOTES.push({label:l, content:c}); updateNoteSelect(); } }
-
-    /* 改進的匯出功能：支援自訂檔名 */
     function exportBackupFile() {
         const today = new Date().toISOString().split('T')[0];
         const defaultFileName = `${currentSaveName}_backup_${today}`;
-        
-        // 彈出對話框詢問檔名
         const customName = prompt("請輸入匯出的檔案名稱：", defaultFileName);
-        
-        // 如果使用者點擊取消或沒輸入，則不執行匯出
         if (customName === null) return;
         const finalFileName = (customName.trim() || defaultFileName) + ".json";
-
         const backupData = { studentName: currentSaveName, content: appData, exportDate: today };
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = finalFileName;
-        a.click();
-        
-        // 提醒使用者如何設定儲存位置
-        console.log("提示：若要更改儲存位置，請在瀏覽器設定中開啟『下載前詢問儲存位置』。");
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = finalFileName; a.click();
     }
-
     function importBackupFile(event) {
         const file = event.target.files[0]; if (!file) return;
         const reader = new FileReader();
-        reader.onload = function(e) { try { const data = JSON.parse(e.target.result); if (confirm(`載入「${data.studentName}」？`)) { appData = data.content; saveAndRefresh(); } } catch (err) { alert("格式錯誤"); } event.target.value = ""; };
+        reader.onload = function(e) { 
+            try { 
+                const data = JSON.parse(e.target.result); 
+                if (confirm(`載入「${data.studentName}」？`)) { appData = data.content; saveAndRefresh(); } 
+            } catch (err) { alert("格式錯誤"); } event.target.value = ""; 
+        };
         reader.readAsText(file);
     }
     function exportData() { const obj = { tasks: appData.tasks, teacherNote: appData.teacherNote }; const code = btoa(encodeURIComponent(JSON.stringify(obj))); navigator.clipboard.writeText(code).then(() => alert("代碼已複製")); }
     function importData() { const code = prompt("貼上代碼："); if (!code) return; try { const data = JSON.parse(decodeURIComponent(atob(code))); appData.tasks = data.tasks; appData.teacherNote = data.teacherNote; saveAndRefresh(); } catch (e) { alert("無效代碼"); } }
+    function resetStars() { if (confirm("確定星星歸零嗎？")) { let totalSec = 0; Object.values(appData.stats).forEach(s => totalSec += s); appData.baseMinutes = Math.floor(totalSec / 60); saveAndRefresh(); } }
 
     init();
 </script>
