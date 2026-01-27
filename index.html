@@ -2,8 +2,9 @@
 <html lang="zh-Hant-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🎹 Vivace 練琴助手 - 陳欣宜 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { 
             --bg-paper: #fff9f0; --warm-wood: #8c5a44; --cream: #fdf6e3; 
@@ -46,9 +47,10 @@
         .tool-box { border: 2px solid var(--warm-pink); padding: 15px; border-radius: 20px; background: white; text-align: center; }
         
         .task-list { list-style: none; padding: 0; margin: 0; }
-        .task-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 12px; margin-bottom: 8px; border: 1px solid #f0e6d2; gap: 8px; }
-        .task-text { flex: 1; font-size: 15px; color: var(--warm-wood); }
-        .task-text.editable { cursor: pointer; text-decoration: underline dotted; }
+        .task-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 12px; margin-bottom: 8px; border: 1px solid #f0e6d2; gap: 8px; touch-action: none; }
+        .task-text { flex: 1; font-size: 15px; color: var(--warm-wood); cursor: grab; user-select: none; }
+        .task-text.editable { text-decoration: underline dotted; }
+        .sortable-ghost { opacity: 0.3; background: var(--warm-pink) !important; }
 
         .teacher-note-area { margin-top: 20px; padding: 15px; background: #fffcf5; border: 2px solid var(--warm-pink); border-radius: 15px; position: relative; }
         #teacherNoteDisplay { min-height: 50px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #555; }
@@ -62,7 +64,6 @@
         .btn-warm { background: var(--caramel); color: white; }
         .btn-soft { background: var(--warm-pink); color: var(--warm-wood); }
         .template-tag { background: #fff; border: 1px solid var(--caramel); font-size: 11px; padding: 4px 8px; border-radius: 8px; cursor: pointer; }
-        .template-tag:hover { background: var(--warm-pink); }
         
         .counter-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--warm-pink); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 4px solid white; font-size: 32px; font-weight: bold; margin: 10px auto; color: var(--warm-wood); }
         #taskLockBtn { background: #eee; border: 2px solid var(--caramel); width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -103,9 +104,13 @@
     <div class="reward-banner">
         <div id="starContainer" class="star-display"></div>
         <div style="font-size: 11px; opacity: 0.9;">
+            <span id="manualStarBtns" style="display:none; margin-right: 10px;">
+                <button onclick="adjustStars(-1)" style="padding: 2px 8px; background: #a67c52; color: white; border-radius: 5px;">- ⭐</button>
+                <button onclick="adjustStars(1)" style="padding: 2px 8px; background: #a67c52; color: white; border-radius: 5px;">+ ⭐</button>
+            </span>
             ⭐ 每 <input type="number" id="starThreshold" value="30" min="1" disabled style="width: 30px; border:none; background:transparent; color:inherit; text-align:center; font-weight:bold; font-family: inherit;"> 分鐘得一星
             <button onclick="toggleStarLock()" id="lockBtn" style="padding: 2px 6px; font-size: 9px; background: #744b35; color: white;">🔑 管理</button>
-            <button onclick="resetStars()" id="resetStarBtn" class="btn-danger" style="display:none; background:#a67c52; color:white; font-size:10px;">🗑️ 星星歸零</button>
+            <button onclick="resetStars()" id="resetStarBtn" style="display:none; background:#a67c52; color:white; font-size:10px;">🗑️ 星星歸零</button>
         </div>
     </div>
     
@@ -151,9 +156,9 @@
             <div style="background: rgba(140,90,68,0.05); padding: 10px; border-radius: 10px; margin-bottom: 12px; border: 1px dashed var(--caramel);">
                 <div style="font-size: 12px; margin-bottom: 5px; font-weight: bold;">⚡ 快速派發範本 (書名+頁碼)</div>
                 <div style="display:flex; gap:5px;">
-                    <input type="text" id="bookInput" list="bookList" placeholder="書名(如:芬貝爾)" style="flex:1; font-family: inherit;">
+                    <input type="text" id="bookInput" list="bookList" placeholder="書名" style="flex:1; font-family: inherit;">
                     <datalist id="bookList"></datalist>
-                    <input type="text" id="pageInput" placeholder="頁/編號" style="width: 60px; font-family: inherit;">
+                    <input type="text" id="pageInput" placeholder="頁碼" style="width: 60px; font-family: inherit;">
                     <button class="btn-warm" onclick="applySmartTemplate()">派發</button>
                     <button class="btn-soft" onclick="saveAsCustomTemplate()" style="background:#f1c40f; color:white;">💾 存為範本</button>
                 </div>
@@ -161,10 +166,10 @@
             </div>
             <div style="display:flex; gap:5px; margin-bottom:10px;">
                 <select id="scaleKey" style="flex:1; font-family: inherit;">
-                    <optgroup label="大調 Major"><option>C Major</option><option>G Major</option><option>D Major</option><option>A Major</option><option>E Major</option><option>B Major</option><option>F# Major</option><option>C# Major</option><option>F Major</option><option>Bb Major</option><option>Eb Major</option><option>Ab Major</option><option>Db Major</option><option>Gb Major</option><option>Cb Major</option></optgroup>
-                    <optgroup label="小調 minor"><option>a minor</option><option>e minor</option><option>b minor</option><option>f# minor</option><option>c# minor</option><option>g# minor</option><option>d# minor</option><option>a# minor</option><option>d minor</option><option>g minor</option><option>c minor</option><option>f minor</option><option>bb minor</option><option>eb minor</option><option>ab minor</option></optgroup>
+                    <optgroup label="大調 Major"><option value="C Major">C 大調</option><option value="G Major">G 大調</option><option value="D Major">D 大調</option><option value="A Major">A 大調</option><option value="E Major">E 大調</option><option value="B Major">B 大調</option><option value="F# Major">F# 大調</option><option value="C# Major">C# 大調</option><option value="F Major">F 大調</option><option value="Bb Major">Bb 大調</option><option value="Eb Major">Eb 大調</option><option value="Ab Major">Ab 大調</option><option value="Db Major">Db 大調</option><option value="Gb Major">Gb 大調</option><option value="Cb Major">Cb 大調</option></optgroup>
+                    <optgroup label="小調 minor"><option value="a minor">a 小調</option><option value="e minor">e 小調</option><option value="b minor">b 小調</option><option value="f# minor">f# 小調</option><option value="c# minor">c# 小調</option><option value="g# minor">g# 小調</option><option value="d# minor">d# 小調</option><option value="a# minor">a# 小調</option><option value="d minor">d 小調</option><option value="g minor">g 小調</option><option value="c minor">c 小調</option><option value="f minor">f 小調</option><option value="bb minor">bb 小調</option><option value="eb minor">eb 小調</option><option value="ab minor">ab 小調</option></optgroup>
                 </select>
-                速度: <input type="number" id="scaleBpm" value="60" style="width: 40px; font-family: inherit;">
+                速度: <input type="number" id="scaleBpm" value="180" style="width: 45px; font-family: inherit;">
                 <button class="btn-warm" onclick="addScaleTask()">加音階</button>
             </div>
             <div style="display: flex; gap: 5px;">
@@ -181,7 +186,7 @@
                 <button onclick="exportData()" class="btn-soft" style="background: white; border: 1px solid var(--caramel); font-size: 11px;">📤 複製代碼</button>
                 <button onclick="importData()" class="btn-soft" style="background: white; border: 1px solid var(--caramel); font-size: 11px;">📥 貼上代碼</button>
             </div>
-            <button onclick="window.print()" class="btn-pdf" style="width: 100%; padding: 10px; font-size: 13px; background: #5a8dee; color: white;">🖨️ 產生 PDF 聯絡簿</button>
+            <button onclick="window.print()" style="width: 100%; padding: 10px; font-size: 13px; background: #5a8dee; color: white; border-radius:12px; font-weight:bold;">🖨️ 產生 PDF 聯絡簿</button>
         </div>
     </div>
 
@@ -213,7 +218,6 @@
 <div style="margin-top: 25px; font-size: 14px; color: var(--caramel); font-weight: bold;">設計者：陳欣宜 2026</div>
 
 <script>
-    /* 核心變數 */
     let mediaRecorder, audioChunks = [], audioBlob, audioUrl, mediaStream = null;
     let audioCtx = null, metroRunning = false, nextTickTime = 0, currentBeat = 0, timerID = null;
     let timerInterval = null, timeLeft = 1200, totalTimeSet = 1200, isTimerRunning = false, isStarLocked = true, isTaskLocked = true;
@@ -232,46 +236,77 @@
     let saveList = JSON.parse(localStorage.getItem('v_list_v2026')) || ['預設存檔'];
     let appData = {};
 
-    // 用於記錄每個練習項目的勾選狀態（存檔用）
-    // 雖然 renderUI 會抓畫面的狀態，但主資料結構也要支援
-    function init() { loadData(); updateSaveSelect(); updateBookDatalist(); updateNoteSelect(); renderCustomTemplateButtons(); renderUI(); resetTimer(); }
+    function init() { 
+        loadData(); 
+        updateSaveSelect(); 
+        updateBookDatalist(); 
+        updateNoteSelect(); 
+        renderCustomTemplateButtons(); 
+        renderUI(); 
+        resetTimer(); 
+        initSortable();
+    }
 
-    // --- ✨ 語音切換開關修正 ---
+    function initSortable() {
+        const el = document.getElementById('taskList');
+        Sortable.create(el, {
+            handle: '.task-text',
+            animation: 150,
+            delay: 150,
+            delayOnTouchOnly: true,
+            onEnd: function() {
+                let newTasks = [];
+                document.querySelectorAll('.task-item').forEach(li => {
+                    newTasks.push(appData.tasks[li.dataset.index]);
+                });
+                appData.tasks = newTasks;
+                saveData();
+                renderUI();
+            }
+        });
+    }
+
+    // --- 🔊 語音功能強化（修正前兩字消失、去符號） ---
     function toggleSpeech(text) {
         if (!text) return;
-        // 如果正在朗讀中，再按一下就停止
-        if (window.speechSynthesis.speaking) {
-            window.speechSynthesis.cancel();
-        } else {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-TW';
-            utterance.rate = 0.9;
-            window.speechSynthesis.speak(utterance);
-        }
+        
+        // 去除特殊符號，將：、BPM等轉為空格或易讀文字
+        const cleanText = text.replace(/[🎹⏱️✨()（）]/g, ' ')
+                              .replace(/[:：]/g, ' ')
+                              .trim();
+        
+        if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = 'zh-TW';
+        utterance.rate = 1.0;
+        
+        // 預熱解決吞字問題
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+        window.speechSynthesis.speak(utterance);
     }
 
     function speakNote() {
-        toggleSpeech(appData.teacherNote || "目前沒有評價內容可以朗讀喔！");
+        toggleSpeech(appData.teacherNote || "目前沒有評價內容");
     }
 
-    // --- ✨ 重置勾選功能 ---
+    // --- 🔄 修正：勾選項目重置 ---
     function resetChecks() {
         if (confirm("要清除所有項目的勾選狀態嗎？")) {
-            const list = document.getElementById('taskList');
-            list.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-            // 同時更新存檔資料（如果有存的話）
-            if(appData.tasks) appData.tasks.forEach(t => t.done = false);
-            saveData();
+            const checkBoxes = document.querySelectorAll('#taskList input[type="checkbox"]');
+            checkBoxes.forEach(cb => cb.checked = false);
+            if (appData.tasks) {
+                appData.tasks.forEach(t => t.done = false);
+            }
+            saveAndRefresh();
         }
     }
 
-    // --- 自訂模板功能 ---
     function saveAsCustomTemplate() {
         const book = document.getElementById('bookInput').value;
         const page = document.getElementById('pageInput').value;
-        const content = book + (page ? " " + page : "");
         if (!book) { alert("請先輸入書名！"); return; }
-        
+        const content = book + (page ? " " + page : "");
         const name = prompt("請為此範本命名：", book);
         if (name) {
             let templates = JSON.parse(localStorage.getItem('v_custom_templates')) || {};
@@ -305,9 +340,7 @@
     function loadData() {
         const raw = localStorage.getItem(`v_data_v2026_${currentSaveName}`);
         appData = raw ? JSON.parse(raw) : { tasks: [], stats: {}, threshold: 30, weekStart: new Date().toISOString().split('T')[0], baseMinutes: 0, teacherNote: "" };
-        // 確保 task 結構包含 done 屬性
         if(appData.tasks) appData.tasks.forEach(t => { if(t.done === undefined) t.done = false; });
-        
         document.getElementById('starThreshold').value = appData.threshold || 30;
         document.getElementById('weekStartDate').value = appData.weekStart;
         document.getElementById('displayName').innerText = currentSaveName;
@@ -316,13 +349,9 @@
     }
 
     function saveData() { 
-        // 儲存前更新勾選狀態到資料物件
         const list = document.getElementById('taskList');
         const checkBoxes = list.querySelectorAll('input[type="checkbox"]');
-        checkBoxes.forEach((cb, idx) => {
-            if(appData.tasks[idx]) appData.tasks[idx].done = cb.checked;
-        });
-
+        checkBoxes.forEach((cb, idx) => { if(appData.tasks[idx]) appData.tasks[idx].done = cb.checked; });
         appData.threshold = document.getElementById('starThreshold').value;
         appData.weekStart = document.getElementById('weekStartDate').value;
         appData.teacherNote = document.getElementById('teacherNoteEdit').value;
@@ -353,26 +382,35 @@
         const taskListEl = document.getElementById('taskList');
         taskListEl.innerHTML = '';
         appData.tasks.forEach((t, i) => {
-            const li = document.createElement('li'); li.className = `task-item`;
+            const li = document.createElement('li'); 
+            li.className = `task-item`;
+            li.dataset.index = i;
             const deleteBtn = isTaskLocked ? '' : `<button onclick="deleteTask(${i})" style="color:#e74c3c; background:none; margin-left:auto;">✕</button>`;
             
             li.innerHTML = `
                 <input type="checkbox" ${t.done ? 'checked' : ''} onchange="saveData()">
-                <span class="${isTaskLocked ? 'task-text' : 'task-text editable'}" ${isTaskLocked ? `onclick="selectTask('${t.text}')"` : `onclick="handleTaskEdit(${i})"`}>${t.text}</span>
-                <button class="speak-btn" onclick="toggleSpeech('${t.text}')">🔊</button>
+                <span class="${isTaskLocked ? 'task-text' : 'task-text editable'}" 
+                      onclick="${isTaskLocked ? `selectTaskOnly('${t.text.replace(/'/g, "\\'")}')` : `handleTaskEdit(${i})`}">
+                      ${t.text}
+                </span>
+                <button class="speak-btn" onclick="toggleSpeech('${t.text.replace(/'/g, "\\'")}')">🔊</button>
                 ${deleteBtn}`;
             taskListEl.appendChild(li);
         });
         document.getElementById('teacherNoteDisplay').innerText = appData.teacherNote || "";
     }
 
-    // --- 以下為原有邏輯 (計時、錄音、密碼、節拍器等) 保持不變 ---
+    function selectTaskOnly(text) {
+        document.getElementById('currentTaskTitle').innerText = "正在練習：" + text;
+    }
+
     function toggleStarLock() {
         if (isStarLocked) {
             if (prompt("密碼：") === MASTER_PWD) {
                 isStarLocked = false;
                 document.getElementById('starThreshold').disabled = false;
                 document.getElementById('resetStarBtn').style.display = "inline-block";
+                document.getElementById('manualStarBtns').style.display = "inline-block";
                 document.getElementById('teacherNoteDisplay').style.display = "none";
                 document.getElementById('noteEditorContainer').style.display = "flex";
             }
@@ -380,11 +418,20 @@
             isStarLocked = true;
             document.getElementById('starThreshold').disabled = true;
             document.getElementById('resetStarBtn').style.display = "none";
+            document.getElementById('manualStarBtns').style.display = "none";
             document.getElementById('teacherNoteDisplay').style.display = "block";
             document.getElementById('noteEditorContainer').style.display = "none";
             saveAndRefresh();
         }
     }
+
+    function adjustStars(amount) {
+        const threshold = parseInt(appData.threshold) || 30;
+        if (!appData.baseMinutes) appData.baseMinutes = 0;
+        appData.baseMinutes -= (amount * threshold);
+        saveAndRefresh();
+    }
+
     function toggleTaskLock() {
         isTaskLocked = !isTaskLocked;
         const btn = document.getElementById('taskLockBtn');
@@ -393,10 +440,11 @@
         else { btn.innerText = "🔓"; btn.classList.add('unlocked'); panel.style.display = 'block'; }
         renderUI();
     }
-    function selectTask(text) { document.getElementById('currentTaskTitle').innerText = "正在練習：" + text; }
+
     function handleTaskEdit(i) { const n = prompt("編輯項目：", appData.tasks[i].text); if (n) { appData.tasks[i].text = n; saveAndRefresh(); } }
     function syncNewStartValue() { count = parseInt(document.getElementById('customCountSet').value) || 5; document.getElementById('countNum').innerText = count; }
     function resetTimer() { clearInterval(timerInterval); isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 開始"; timeLeft = (parseInt(document.getElementById('setMinutes').value) || 20) * 60; totalTimeSet = timeLeft; updateClockDisplay(); document.getElementById('timerBar').style.width = "100%"; }
+
     function toggleTimer() { 
         if (!isTimerRunning) { 
             isTimerRunning = true; document.getElementById('timerBtn').innerText = "⏸ 暫停"; 
@@ -407,22 +455,55 @@
             }, 1000); 
         } else { isTimerRunning = false; document.getElementById('timerBtn').innerText = "▶ 繼續"; clearInterval(timerInterval); } 
     }
+
     function updateClockDisplay() { const m = Math.floor(timeLeft / 60).toString().padStart(2, '0'); const s = (timeLeft % 60).toString().padStart(2, '0'); document.getElementById('mainClock').innerText = `${m}:${s}`; }
     function saveTimeProgress() { const today = new Date().toISOString().split('T')[0]; appData.stats[today] = (appData.stats[today] || 0) + totalTimeSet; saveAndRefresh(); }
-    function applySmartTemplate() { const b = document.getElementById('bookInput').value; const p = document.getElementById('pageInput').value; if (!b) return; appData.tasks.push({ text: b + (p ? " " + p : ""), done: false }); saveAndRefresh(); }
-    function addScaleTask() { appData.tasks.push({text: `🎹 音階：${document.getElementById('scaleKey').value} (${document.getElementById('scaleBpm').value} BPM)`, done: false}); saveAndRefresh(); }
-    function addTask() { const v = document.getElementById('newTaskInput').value; if(v){ appData.tasks.push({text:v, done: false}); document.getElementById('newTaskInput').value=''; saveAndRefresh(); } }
+
+    function applySmartTemplate() { 
+        const b = document.getElementById('bookInput').value; 
+        const p = document.getElementById('pageInput').value; 
+        if (!b) return; 
+        const txt = b + (p ? " " + p : "");
+        appData.tasks.push({ text: txt, done: false }); 
+        saveAndRefresh(); 
+    }
+
+    // --- ✨ 修正：音階格式轉換 ---
+    function addScaleTask() { 
+        const rawKey = document.getElementById('scaleKey').value;
+        const bpmVal = document.getElementById('scaleBpm').value;
+        
+        // 將 Major 轉為 大調, minor 轉為 小調
+        const formattedKey = rawKey.replace('Major', '大調').replace('minor', '小調');
+        const txt = `🎹 音階：${formattedKey} (速度：${bpmVal})`;
+        
+        appData.tasks.push({text: txt, done: false}); 
+        saveAndRefresh(); 
+    }
+
+    function addTask() { 
+        const v = document.getElementById('newTaskInput').value; 
+        if(v){ 
+            appData.tasks.push({text:v, done: false}); 
+            document.getElementById('newTaskInput').value=''; 
+            saveAndRefresh(); 
+        } 
+    }
+
     function deleteTask(i) { appData.tasks.splice(i,1); saveAndRefresh(); }
+
     function handleCounterClick() { 
         const startVal = parseInt(document.getElementById('customCountSet').value) || 5; 
         if (count > 1) { count--; playBeep(1000, 0.1); document.getElementById('countNum').innerText = count; } 
         else { count = 0; document.getElementById('countNum').innerText = 0; playBeep(1600, 0.4); setTimeout(() => { count = startVal; document.getElementById('countNum').innerText = count; }, 500); } 
     }
+
     function toggleMetronome() { 
         if (!audioCtx) audioCtx = new AudioContext(); 
         if (metroRunning) { window.cancelAnimationFrame(timerID); metroRunning = false; document.getElementById('metroBtn').innerText = "啟動"; } 
         else { nextTickTime = audioCtx.currentTime; currentBeat = 0; scheduler(); metroRunning = true; document.getElementById('metroBtn').innerText = "停止"; } 
     }
+
     function scheduler() { 
         const bpm = document.getElementById('bpmInput').value;
         const beatType = parseInt(document.getElementById('beatType').value);
@@ -434,6 +515,7 @@
         } 
         timerID = window.requestAnimationFrame(scheduler); 
     }
+
     function playBeep(f, d) { 
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
         const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); 
@@ -442,6 +524,7 @@
         g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d); 
         o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d); 
     }
+
     function switchSave() { currentSaveName=document.getElementById('saveSelect').value; init(); }
     function updateSaveSelect() {
         const s = document.getElementById('saveSelect'); s.innerHTML='';
@@ -451,6 +534,7 @@
             s.add(o);
         });
     }
+
     function createNewSave() {
         const n=prompt("輸入新學生名稱：");
         if(n && !saveList.includes(n)){
@@ -459,8 +543,9 @@
             saveAndRefresh(); updateSaveSelect();
         }
     }
+
     function renameCurrentSave() {
-        const n = prompt("將「" + currentSaveName + "」更名為：", currentSaveName);
+        const n = prompt("更名為：", currentSaveName);
         if (n && n !== currentSaveName) {
             const oldKey = `v_data_v2026_${currentSaveName}`;
             saveList = saveList.map(name => name === currentSaveName ? n : name);
@@ -469,6 +554,7 @@
             init();
         }
     }
+
     async function startRecording() {
         try {
             mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -487,12 +573,14 @@
             document.getElementById('recIndicator').style.display = 'block';
         } catch (err) { alert("錄音失敗"); }
     }
+
     function stopRecording() { 
         if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); 
         if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
         document.getElementById('startRec').disabled = false; document.getElementById('stopRec').disabled = true;
         document.getElementById('recIndicator').style.display = 'none'; 
     }
+
     function downloadAudio() { const a = document.createElement('a'); a.href = audioUrl; a.download = `錄音_${new Date().getTime()}.webm`; a.click(); }
     function updateBookDatalist() { const dl = document.getElementById('bookList'); dl.innerHTML = ""; DEFAULT_BOOKS.forEach(name => { const opt = document.createElement('option'); opt.value = name; dl.appendChild(opt); }); }
     function updateNoteSelect() {
@@ -500,6 +588,7 @@
         sel.innerHTML = '<option value="">-- 選擇範本 --</option>';
         DEFAULT_NOTES.forEach(item => { const opt = document.createElement('option'); opt.value = item.content; opt.text = item.label; sel.appendChild(opt); });
     }
+
     function addQuickNote() {
         const sel = document.getElementById('quickNotes');
         if (sel.value) {
@@ -508,6 +597,7 @@
             sel.value = "";
         }
     }
+
     function addNewQuickNote() { const c = prompt("評語內容："); if(c){ const l = prompt("簡稱：", c.substring(0,4)); DEFAULT_NOTES.push({label:l, content:c}); updateNoteSelect(); } }
     function exportBackupFile() {
         const today = new Date().toISOString().split('T')[0];
@@ -519,6 +609,7 @@
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
         const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = finalFileName; a.click();
     }
+
     function importBackupFile(event) {
         const file = event.target.files[0]; if (!file) return;
         const reader = new FileReader();
@@ -530,6 +621,7 @@
         };
         reader.readAsText(file);
     }
+
     function exportData() { const obj = { tasks: appData.tasks, teacherNote: appData.teacherNote }; const code = btoa(encodeURIComponent(JSON.stringify(obj))); navigator.clipboard.writeText(code).then(() => alert("代碼已複製")); }
     function importData() { const code = prompt("貼上代碼："); if (!code) return; try { const data = JSON.parse(decodeURIComponent(atob(code))); appData.tasks = data.tasks; appData.teacherNote = data.teacherNote; saveAndRefresh(); } catch (e) { alert("無效代碼"); } }
     function resetStars() { if (confirm("確定星星歸零嗎？")) { let totalSec = 0; Object.values(appData.stats).forEach(s => totalSec += s); appData.baseMinutes = Math.floor(totalSec / 60); saveAndRefresh(); } }
